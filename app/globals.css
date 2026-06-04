@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* CARLIZ Premium Color Palette - Modern & Light */
+  --luxe-gold: #C9A961;
+  --charcoal-deep: #F8F7F5;
+  --stainless-silver: #9E9E9E;
+  --pure-white: #FFFFFF;
+  --accent-rouge: #8B1538;
+  --soft-gold: #D4B978;
+  --midnight-blue: #1A1F3D;
+  --cream-light: #FDFBF8;
+  --silver-light: #F0EDE8;
+  
+  /* Theme tokens - Modern Light Palette */
+  --background: #FDFBF8;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #C9A961;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0EDE8;
+  --secondary-foreground: #1A1A1A;
+  --muted: #E8E5E0;
+  --muted-foreground: #6B6B6B;
+  --accent: #8B1538;
+  --accent-foreground: #FFFFFF;
+  --destructive: #8B1538;
+  --destructive-foreground: #FFFFFF;
+  --border: #E8E5E0;
+  --input: #F8F7F5;
+  --ring: #C9A961;
+  --chart-1: #C9A961;
+  --chart-2: #8B1538;
+  --chart-3: #1A1F3D;
+  --chart-4: #9E9E9E;
+  --chart-5: #D4B978;
+  --radius: 0.5rem;
+  --sidebar: #FDFBF8;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #C9A961;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0EDE8;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #E8E5E0;
+  --sidebar-ring: #C9A961;
+}
+
+.dark {
+  --background: #FDFBF8;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #C9A961;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0EDE8;
+  --secondary-foreground: #1A1A1A;
+  --muted: #E8E5E0;
+  --muted-foreground: #6B6B6B;
+  --accent: #8B1538;
+  --accent-foreground: #FFFFFF;
+  --destructive: #8B1538;
+  --destructive-foreground: #FFFFFF;
+  --border: #E8E5E0;
+  --input: #F8F7F5;
+  --ring: #C9A961;
+  --sidebar: #FDFBF8;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #C9A961;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0EDE8;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #E8E5E0;
+  --sidebar-ring: #C9A961;
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Geist Fallback', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Geist Mono Fallback', monospace;
+  --font-display: 'Playfair Display', serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  /* CARLIZ custom colors */
+  --color-luxe-gold: var(--luxe-gold);
+  --color-charcoal-deep: var(--charcoal-deep);
+  --color-stainless-silver: var(--stainless-silver);
+  --color-accent-rouge: var(--accent-rouge);
+  --color-soft-gold: var(--soft-gold);
+  --color-midnight-blue: var(--midnight-blue);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar for premium look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--stainless-silver);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--luxe-gold);
+}
+
+/* Gold gradient for headers */
+.gold-gradient {
+  background: linear-gradient(135deg, var(--luxe-gold) 0%, var(--soft-gold) 100%);
+}
+
+/* Premium card shadow */
+.premium-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Status colors */
+.status-available {
+  color: #22C55E;
+}
+
+.status-sold {
+  color: var(--accent-rouge);
+}
+
+.status-maintenance {
+  color: var(--luxe-gold);
+}
