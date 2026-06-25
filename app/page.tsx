@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuthStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,38 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('carliz-theme')
+    if (savedTheme) {
+      const isDarkTheme = savedTheme === 'dark'
+      setIsDark(isDarkTheme)
+      if (isDarkTheme) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      setIsDark(prefersDark)
+      if (prefersDark) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    const nextDark = !isDark
+    setIsDark(nextDark)
+    localStorage.setItem('carliz-theme', nextDark ? 'dark' : 'light')
+    if (nextDark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -44,17 +77,17 @@ export default function LoginPage() {
     <div
       className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
         isDark
-          ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
+          ? 'bg-gradient-to-br from-[#08080A] via-[#0E0E12] to-[#08080A]'
           : 'bg-gradient-to-br from-cream-light via-silver-light to-pure-white'
       }`}
     >
       {/* Theme Toggle Button */}
       <button
-        onClick={() => setIsDark(!isDark)}
-        className={`absolute top-8 right-8 z-50 p-3 rounded-full transition-all duration-300 ${
+        onClick={toggleTheme}
+        className={`absolute top-8 right-8 z-50 p-3 rounded-full transition-all duration-300 border ${
           isDark
-            ? 'bg-midnight-blue/20 hover:bg-midnight-blue/40 text-soft-gold'
-            : 'bg-luxe-gold/10 hover:bg-luxe-gold/20 text-luxe-gold'
+            ? 'bg-[#18181C] hover:bg-[#222226] text-luxe-gold border-luxe-gold/30 shadow-lg shadow-black/30'
+            : 'bg-luxe-gold/20 hover:bg-luxe-gold/30 text-luxe-gold border-luxe-gold/30'
         }`}
         aria-label="Toggle theme"
       >
@@ -66,7 +99,7 @@ export default function LoginPage() {
         {/* Left Side - Form */}
         <div
           className={`w-full md:w-1/2 flex flex-col justify-center items-center p-8 md:p-12 transition-colors duration-300 ${
-            isDark ? 'bg-slate-800/50 backdrop-blur-sm' : 'bg-white/90 backdrop-blur-sm'
+            isDark ? 'bg-[#0B0B0D]/80 backdrop-blur-sm' : 'bg-white/90 backdrop-blur-sm'
           }`}
         >
           {/* Decorative Elements - Top Left */}
@@ -77,7 +110,7 @@ export default function LoginPage() {
           />
           <div
             className={`absolute top-20 left-20 w-12 h-12 rounded-full opacity-20 transition-colors duration-300 ${
-              isDark ? 'bg-midnight-blue' : 'bg-midnight-blue/30'
+              isDark ? 'bg-luxe-gold/20' : 'bg-midnight-blue/30'
             }`}
           />
 
@@ -85,7 +118,13 @@ export default function LoginPage() {
             {/* Logo Section */}
             <div className="text-center mb-10">
               <div className="flex justify-center mb-6">
-                <img src="/carliz-logo.png" alt="CARLIZ Logo" className="h-24 w-auto" />
+                {isDark ? (
+                  <div className="w-24 h-24 rounded-full bg-white border-2 border-luxe-gold flex items-center justify-center p-2 shadow-lg shadow-black/30 overflow-hidden">
+                    <img src="/carliz-logo.png" alt="CARLIZ Logo" className="h-16 w-auto object-contain" />
+                  </div>
+                ) : (
+                  <img src="/carliz-logo.png" alt="CARLIZ Logo" className="h-24 w-auto animate-fade-in" />
+                )}
               </div>
               <h1
                 className={`text-4xl md:text-5xl font-bold tracking-wider transition-colors duration-300 ${
@@ -110,7 +149,7 @@ export default function LoginPage() {
             <Card
               className={`border-2 transition-all duration-300 ${
                 isDark
-                  ? 'bg-slate-700/50 border-luxe-gold/30 shadow-2xl shadow-black/50'
+                  ? 'bg-[#121215]/90 border-luxe-gold/30 shadow-2xl shadow-black/80'
                   : 'bg-white/95 border-luxe-gold/40 shadow-xl'
               }`}
             >
@@ -145,7 +184,7 @@ export default function LoginPage() {
                     <Label
                       htmlFor="email"
                       className={`text-sm font-semibold transition-colors duration-300 ${
-                        isDark ? 'text-luxe-gold' : 'text-midnight-blue'
+                        isDark ? 'text-[#ECEAE5]' : 'text-midnight-blue'
                       }`}
                     >
                       Email
@@ -159,7 +198,7 @@ export default function LoginPage() {
                       required
                       className={`border-2 transition-all duration-300 ${
                         isDark
-                          ? 'bg-slate-600/50 border-luxe-gold/20 text-white placeholder:text-stainless-silver/40 focus:border-luxe-gold focus:ring-0'
+                          ? 'bg-[#16161A] border-luxe-gold/20 text-[#F5F5F7] placeholder:text-[#9E9E9E]/40 focus:border-luxe-gold focus:ring-0'
                           : 'bg-white border-luxe-gold/20 text-midnight-blue placeholder:text-stainless-silver/40 focus:border-luxe-gold focus:ring-0'
                       }`}
                     />
@@ -170,7 +209,7 @@ export default function LoginPage() {
                     <Label
                       htmlFor="password"
                       className={`text-sm font-semibold transition-colors duration-300 ${
-                        isDark ? 'text-luxe-gold' : 'text-midnight-blue'
+                        isDark ? 'text-[#ECEAE5]' : 'text-midnight-blue'
                       }`}
                     >
                       Contraseña
@@ -185,7 +224,7 @@ export default function LoginPage() {
                         required
                         className={`border-2 pr-10 transition-all duration-300 ${
                           isDark
-                            ? 'bg-slate-600/50 border-luxe-gold/20 text-white placeholder:text-stainless-silver/40 focus:border-luxe-gold focus:ring-0'
+                            ? 'bg-[#16161A] border-luxe-gold/20 text-[#F5F5F7] placeholder:text-[#9E9E9E]/40 focus:border-luxe-gold focus:ring-0'
                             : 'bg-white border-luxe-gold/20 text-midnight-blue placeholder:text-stainless-silver/40 focus:border-luxe-gold focus:ring-0'
                         }`}
                       />
@@ -209,8 +248,8 @@ export default function LoginPage() {
 
                   {/* Forgot Password Link */}
                   <div className="text-right">
-                    <a
-                      href="#"
+                    <Link
+                      href="/forgot-password"
                       className={`text-xs font-semibold transition-colors duration-300 ${
                         isDark
                           ? 'text-luxe-gold hover:text-soft-gold'
@@ -218,7 +257,7 @@ export default function LoginPage() {
                       }`}
                     >
                       ¿Olvidaste tu contraseña?
-                    </a>
+                    </Link>
                   </div>
 
                   {/* Error Message */}
@@ -226,7 +265,7 @@ export default function LoginPage() {
                     <div
                       className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all duration-300 ${
                         isDark
-                          ? 'bg-accent-rouge/15 border-accent-rouge/40'
+                          ? 'bg-accent-rouge/15 border-accent-rouge/30'
                           : 'bg-accent-rouge/10 border-accent-rouge/30'
                       }`}
                     >
@@ -277,7 +316,7 @@ export default function LoginPage() {
                 <div
                   className={`p-4 rounded-lg border-2 transition-all duration-300 ${
                     isDark
-                      ? 'bg-slate-600/30 border-midnight-blue/40'
+                      ? 'bg-[#16161A]/60 border-luxe-gold/20'
                       : 'bg-luxe-gold/5 border-luxe-gold/20'
                   }`}
                 >
@@ -314,32 +353,20 @@ export default function LoginPage() {
 
         {/* Right Side - Decorative */}
         <div
-          className={`hidden md:flex w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden transition-colors duration-300 ${
-            isDark
-              ? 'bg-gradient-to-br from-midnight-blue to-slate-700'
-              : 'bg-gradient-to-br from-luxe-gold to-soft-gold'
-          }`}
+          className="hidden md:flex w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-luxe-gold to-soft-gold"
         >
           {/* Decorative Elements */}
           <div
-            className={`absolute top-12 right-12 w-32 h-32 rounded-full opacity-20 transition-colors duration-300 ${
-              isDark ? 'bg-soft-gold' : 'bg-white'
-            }`}
+            className="absolute top-12 right-12 w-32 h-32 rounded-full opacity-20 bg-white"
           />
           <div
-            className={`absolute bottom-12 left-12 w-40 h-40 rounded-full opacity-15 transition-colors duration-300 ${
-              isDark ? 'bg-soft-gold' : 'bg-white'
-            }`}
+            className="absolute bottom-12 left-12 w-40 h-40 rounded-full opacity-15 bg-white"
           />
 
           {/* Center Content */}
           <div className="relative z-10 text-center">
             <div
-              className={`mb-8 inline-flex items-center justify-center w-24 h-24 rounded-2xl transition-colors duration-300 ${
-                isDark
-                  ? 'bg-white/10 border-2 border-white/30'
-                  : 'bg-white/20 border-2 border-white/40'
-              }`}
+              className="mb-8 inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white/20 border-2 border-white/40"
             >
               <img
                 src="/carliz-logo.png"
@@ -348,24 +375,18 @@ export default function LoginPage() {
               />
             </div>
             <h2
-              className={`text-3xl font-bold transition-colors duration-300 ${
-                isDark ? 'text-white' : 'text-white'
-              }`}
+              className="text-3xl font-bold text-white"
               style={{ fontFamily: 'var(--font-playfair)' }}
             >
               Bienvenido
             </h2>
             <p
-              className={`mt-4 text-lg transition-colors duration-300 ${
-                isDark ? 'text-white/80' : 'text-white/90'
-              }`}
+              className="mt-4 text-lg text-white/90"
             >
               Sistema de Gestión Administrativa
             </p>
             <p
-              className={`mt-6 text-sm max-w-xs transition-colors duration-300 ${
-                isDark ? 'text-white/60' : 'text-white/70'
-              }`}
+              className="mt-6 text-sm max-w-xs text-white/70"
             >
               Accede a tu panel de control para gestionar el inventario y ventas de CARLIZ
             </p>

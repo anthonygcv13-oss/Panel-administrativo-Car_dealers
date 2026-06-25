@@ -1,19 +1,11 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, FinancingPlan } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -30,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function FinancingPlansPage() {
   const { financingPlans, addFinancingPlan, updateFinancingPlan, deleteFinancingPlan } = useDataStore()
@@ -43,8 +36,22 @@ export default function FinancingPlansPage() {
     number_installments: 1,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   const filteredPlans = financingPlans.filter(plan =>
     plan.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(filteredPlans.length / itemsPerPage)
+  const paginatedPlans = filteredPlans.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   )
 
   // Statistics calculations
@@ -126,8 +133,8 @@ export default function FinancingPlansPage() {
           
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Percent className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center dark:bg-blue-950/20">
+                <Percent className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Tasa Promedio</p>
@@ -138,8 +145,8 @@ export default function FinancingPlansPage() {
 
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-950/20">
+                <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Plazo Máximo</p>
@@ -150,8 +157,8 @@ export default function FinancingPlansPage() {
 
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                <Scale className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center dark:bg-purple-950/20">
+                <Scale className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Plazo Mínimo</p>
@@ -174,7 +181,7 @@ export default function FinancingPlansPage() {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto">
+              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Plan
               </Button>
@@ -182,75 +189,90 @@ export default function FinancingPlansPage() {
           </CardContent>
         </Card>
 
-        {/* Plans Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead>Nombre del Plan</TableHead>
-                  <TableHead>Tasa de Interés Anual</TableHead>
-                  <TableHead>Cantidad de Cuotas</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPlans.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No se encontraron planes de financiamiento
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredPlans.map(plan => (
-                    <TableRow key={plan.id_financing_plan} className="hover:bg-muted/30">
-                      <TableCell className="font-mono">#{plan.id_financing_plan.toString().padStart(3, '0')}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#C9A961]/20 flex items-center justify-center">
-                            <Percent className="w-5 h-5 text-[#C9A961]" />
-                          </div>
-                          <span className="font-medium">{plan.name}</span>
+        {/* Plans Card Grid */}
+        {paginatedPlans.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Landmark className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron planes de financiamiento</p>
+              <p className="text-sm">Intenta buscar con otros términos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedPlans.map((plan) => (
+                <Card 
+                  key={plan.id_financing_plan} 
+                  className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                >
+                  <CardContent className="p-6 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#C9A961]/10 dark:bg-[#C9A961]/20 flex items-center justify-center border border-[#C9A961]/20 group-hover:scale-105 transition-transform">
+                          <Percent className="w-6 h-6 text-[#C9A961]" />
                         </div>
-                      </TableCell>
-                      <TableCell className="font-medium text-blue-600 dark:text-blue-400">
-                        {plan.interest_rate}%
-                      </TableCell>
-                      <TableCell>
-                        <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                        <div>
+                          <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors">
+                            {plan.name}
+                          </h3>
+                          <span className="text-xs font-mono text-muted-foreground">ID: #{plan.id_financing_plan.toString().padStart(3, '0')}</span>
+                        </div>
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem onClick={() => handleOpenDialog(plan)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(plan.id_financing_plan)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Rates and installments */}
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border/40 text-center">
+                      <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/20">
+                        <span className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Tasa Anual</span>
+                        <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                          {plan.interest_rate}%
+                        </span>
+                      </div>
+                      <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/20">
+                        <span className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Plazo</span>
+                        <span className="text-lg font-bold text-foreground">
                           {plan.number_installments} cuotas
                         </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenDialog(plan)}>
-                              <Pencil className="w-4 h-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(plan.id_financing_plan)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Dialog for Create/Edit */}

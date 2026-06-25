@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Quote, QuoteStatus } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -13,14 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -39,7 +31,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Calendar,
+  User,
+  Car
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -47,6 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function QuotesPage() {
   const { quotes, vehicles, customers, brands, models, addQuote, updateQuote } = useDataStore()
@@ -63,6 +59,14 @@ export default function QuotesPage() {
     id_customer: 0,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter])
+
   const availableVehicles = vehicles.filter(v => v.status === 'available')
 
   const filteredQuotes = quotes.filter(quote => {
@@ -76,6 +80,12 @@ export default function QuotesPage() {
     const matchesStatus = statusFilter === 'all' || quote.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  const totalPages = Math.ceil(filteredQuotes.length / itemsPerPage)
+  const paginatedQuotes = filteredQuotes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const pendingQuotes = quotes.filter(q => q.status === 'pending').length
   const approvedQuotes = quotes.filter(q => q.status === 'approved').length
@@ -132,10 +142,10 @@ export default function QuotesPage() {
 
   const getStatusBadge = (status: QuoteStatus) => {
     const styles = {
-      pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      approved: 'bg-green-100 text-green-700 border-green-200',
-      rejected: 'bg-red-100 text-red-700 border-red-200',
-      expired: 'bg-gray-100 text-gray-700 border-gray-200',
+      pending: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/20 dark:text-yellow-400 dark:border-yellow-800',
+      approved: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800',
+      rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800',
+      expired: 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
     }
     const labels = {
       pending: 'Pendiente',
@@ -144,7 +154,7 @@ export default function QuotesPage() {
       expired: 'Expirada',
     }
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${styles[status]}`}>
         {labels[status]}
       </span>
     )
@@ -162,8 +172,8 @@ export default function QuotesPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center dark:bg-yellow-950/20">
+                <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendientes</p>
@@ -173,8 +183,8 @@ export default function QuotesPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-950/20">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Aprobadas</p>
@@ -184,8 +194,8 @@ export default function QuotesPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center dark:bg-red-950/20">
+                <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Rechazadas</p>
@@ -195,8 +205,8 @@ export default function QuotesPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-gray-600" />
+              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center dark:bg-zinc-800">
+                <AlertCircle className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Expiradas</p>
@@ -233,7 +243,7 @@ export default function QuotesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto">
+              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Cotización
               </Button>
@@ -241,96 +251,127 @@ export default function QuotesPage() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>ID</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Vehículo</TableHead>
-                  <TableHead>Precio Estimado</TableHead>
-                  <TableHead>Validez</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredQuotes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No se encontraron cotizaciones
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredQuotes.map(quote => {
-                    const customer = customers.find(c => c.id_customer === quote.id_customer)
-                    const vehicle = vehicles.find(v => v.id_vehicle === quote.id_vehicle)
-                    const brand = brands.find(b => b.id_brand === vehicle?.id_brand)
-                    const model = models.find(m => m.id_model === vehicle?.id_model)
-                    return (
-                      <TableRow key={quote.id_quote} className="hover:bg-muted/30">
-                        <TableCell>
+        {/* Quotes Card Grid */}
+        {paginatedQuotes.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <FileText className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron cotizaciones</p>
+              <p className="text-sm">Intenta buscar con otros términos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedQuotes.map((quote) => {
+                const customer = customers.find(c => c.id_customer === quote.id_customer)
+                const vehicle = vehicles.find(v => v.id_vehicle === quote.id_vehicle)
+                const brand = brands.find(b => b.id_brand === vehicle?.id_brand)
+                const model = models.find(m => m.id_model === vehicle?.id_model)
+
+                return (
+                  <Card 
+                    key={quote.id_quote} 
+                    className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                  >
+                    <CardContent className="p-6 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
                           <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-[#C9A961]" />
-                            <span className="font-mono">#{quote.id_quote.toString().padStart(4, '0')}</span>
+                            <span className="font-mono text-sm font-bold text-foreground">
+                              Cotización #{quote.id_quote.toString().padStart(4, '0')}
+                            </span>
+                            {getStatusBadge(quote.status)}
                           </div>
-                        </TableCell>
-                        <TableCell>{new Date(quote.date).toLocaleDateString('es-ES')}</TableCell>
-                        <TableCell>
+                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground font-medium">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Emitida: {new Date(quote.date).toLocaleDateString('es-ES')}</span>
+                          </div>
+                        </div>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => handleOpenDialog(quote)}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+
+                            {quote.status === 'pending' && (
+                              <>
+                                <DropdownMenuItem onClick={() => updateQuote(quote.id_quote, { status: 'approved' })}>
+                                  <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                                  Aprobar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateQuote(quote.id_quote, { status: 'rejected' })}>
+                                  <XCircle className="w-4 h-4 mr-2 text-red-600" />
+                                  Rechazar
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      {/* Details */}
+                      <div className="space-y-2 pt-2.5 border-t border-border/40 text-sm">
+                        <div className="flex items-start gap-2.5 text-muted-foreground">
+                          <User className="w-4 h-4 text-[#C9A961] flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-medium">{customer?.first_name} {customer?.last_name}</p>
-                            <p className="text-sm text-muted-foreground">{customer?.email}</p>
+                            <p className="font-semibold text-foreground leading-tight">
+                              {customer ? `${customer.first_name} ${customer.last_name}` : 'Cliente Desconocido'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{customer?.email}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
+                        </div>
+
+                        <div className="flex items-start gap-2.5 text-muted-foreground">
+                          <Car className="w-4 h-4 text-[#C9A961] flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-medium">{brand?.name} {model?.name}</p>
-                            <p className="text-sm text-muted-foreground font-mono">{vehicle?.license_plate}</p>
+                            <p className="font-medium text-foreground leading-tight">
+                              {brand ? `${brand.name} ${model?.name || ''}` : 'Vehículo'}
+                            </p>
+                            <p className="text-xs font-mono text-muted-foreground mt-0.5">{vehicle?.license_plate || 'Sin Placa'}</p>
                           </div>
-                        </TableCell>
-                        <TableCell className="font-bold text-[#C9A961]">
-                          ${quote.estimated_price.toLocaleString()}
-                        </TableCell>
-                        <TableCell>{new Date(quote.validity_date).toLocaleDateString('es-ES')}</TableCell>
-                        <TableCell>{getStatusBadge(quote.status)}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleOpenDialog(quote)}>
-                                <Pencil className="w-4 h-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              {quote.status === 'pending' && (
-                                <>
-                                  <DropdownMenuItem onClick={() => updateQuote(quote.id_quote, { status: 'approved' })}>
-                                    <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                                    Aprobar
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => updateQuote(quote.id_quote, { status: 'rejected' })}>
-                                    <XCircle className="w-4 h-4 mr-2 text-red-600" />
-                                    Rechazar
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        </div>
+                      </div>
+
+                      {/* Estimation and validity */}
+                      <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">
+                          <span className="block uppercase tracking-wider font-semibold">Precio Estimado</span>
+                          <span className="text-lg font-bold text-[#C9A961]">
+                            ${quote.estimated_price.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="text-right text-xs text-muted-foreground">
+                          <span className="block font-medium">Validez</span>
+                          <span className="text-foreground font-semibold">
+                            {new Date(quote.validity_date).toLocaleDateString('es-ES')}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}

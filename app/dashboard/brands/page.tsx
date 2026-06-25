@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Brand, GeneralStatus } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -13,14 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -37,6 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function BrandsPage() {
   const { brands, addBrand, updateBrand, deleteBrand } = useDataStore()
@@ -51,9 +44,23 @@ export default function BrandsPage() {
     status: 'active' as GeneralStatus,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   const filteredBrands = brands.filter(brand =>
     brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     brand.country_origin.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(filteredBrands.length / itemsPerPage)
+  const paginatedBrands = filteredBrands.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   )
 
   const handleOpenDialog = (brand?: Brand) => {
@@ -97,11 +104,11 @@ export default function BrandsPage() {
 
   const getStatusBadge = (status: GeneralStatus) => {
     return status === 'active' ? (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 border border-green-200">
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
         Activo
       </span>
     ) : (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
         Inactivo
       </span>
     )
@@ -128,7 +135,7 @@ export default function BrandsPage() {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto">
+              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Marca
               </Button>
@@ -136,87 +143,103 @@ export default function BrandsPage() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>País de Origen</TableHead>
-                  <TableHead>Sitio Web</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBrands.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No se encontraron marcas
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredBrands.map(brand => (
-                    <TableRow key={brand.id_brand} className="hover:bg-muted/30">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#C9A961]/20 flex items-center justify-center">
-                            <Tag className="w-5 h-5 text-[#C9A961]" />
+        {/* Card Grid */}
+        {paginatedBrands.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Tag className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron marcas</p>
+              <p className="text-sm">Intenta buscar con otros términos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedBrands.map((brand) => (
+                <Card 
+                  key={brand.id_brand} 
+                  className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                >
+                  <CardContent className="p-6 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#C9A961]/10 dark:bg-[#C9A961]/20 flex items-center justify-center border border-[#C9A961]/20 group-hover:scale-105 transition-transform">
+                          <Tag className="w-6 h-6 text-[#C9A961]" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors">
+                            {brand.name}
+                          </h3>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground font-medium">{brand.country_origin}</span>
                           </div>
-                          <span className="font-medium">{brand.name}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-w-xs truncate">
-                        {brand.description}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Globe className="w-4 h-4 text-muted-foreground" />
-                          {brand.country_origin}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <a 
-                          href={`https://${brand.website}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-[#C9A961] hover:underline"
-                        >
-                          {brand.website}
-                        </a>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(brand.status)}</TableCell>
-                      <TableCell className="text-right">
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(brand.status)}
+                        
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="w-40">
                             <DropdownMenuItem onClick={() => handleOpenDialog(brand)}>
                               <Pencil className="w-4 h-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDelete(brand.id_brand)}
-                              className="text-red-600 focus:text-red-600"
+                              className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    {brand.description && (
+                      <p className="text-sm text-muted-foreground/90 line-clamp-2 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/20">
+                        {brand.description}
+                      </p>
+                    )}
+
+                    {/* Website */}
+                    {brand.website && (
+                      <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Sitio web</span>
+                        <a 
+                          href={brand.website.startsWith('http') ? brand.website : `https://${brand.website}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-[#C9A961] hover:underline flex items-center gap-1 truncate max-w-[200px]"
+                        >
+                          {brand.website}
+                          <Globe className="w-3 h-3 flex-shrink-0" />
+                        </a>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}

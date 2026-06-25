@@ -27,7 +27,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white">
+    <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white dark:from-[#09090B] dark:via-[#0C0C0E] dark:to-[#09090B] text-foreground transition-colors duration-300">
       <Sidebar />
       <main className="ml-72 transition-all duration-300">
         {children}

@@ -54,19 +54,19 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 z-40 h-screen bg-gradient-to-b from-silver-light via-cream-light to-pure-white border-r border-luxe-gold/20 transition-all duration-300 flex flex-col shadow-lg",
+      "fixed left-0 top-0 z-40 h-screen bg-gradient-to-b from-silver-light via-cream-light to-pure-white dark:from-[#121215] dark:via-[#09090B] dark:to-[#0C0C0E] border-r border-luxe-gold/20 dark:border-luxe-gold/10 transition-all duration-300 flex flex-col shadow-lg",
       collapsed ? "w-20" : "w-72"
     )}>
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-luxe-gold via-soft-gold to-luxe-gold" />
 
-      <div className="flex items-center justify-between p-4 border-b border-luxe-gold/15 mt-1">
+      <div className="flex items-center justify-between p-4 border-b border-luxe-gold/15 dark:border-luxe-gold/10 mt-1">
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-luxe-gold to-soft-gold flex items-center justify-center shadow-md">
+            <div className="w-11 h-11 rounded-full bg-white border-2 border-luxe-gold flex items-center justify-center p-1 shadow-md">
               <img src="/carliz-logo.png" alt="CARLIZ" className="w-8 h-8 object-contain" />
             </div>
             <div>
-              <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-luxe-gold to-midnight-blue tracking-wider" style={{ fontFamily: 'var(--font-playfair)' }}>
+              <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-luxe-gold to-midnight-blue dark:to-[#F5F5F7] tracking-wider" style={{ fontFamily: 'var(--font-playfair)' }}>
                 CARLIZ
               </div>
               <div className="text-xs text-luxe-gold/70 tracking-widest font-medium">ADMIN</div>
@@ -74,7 +74,7 @@ export function Sidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="w-11 h-11 mx-auto rounded-lg bg-gradient-to-br from-luxe-gold to-soft-gold flex items-center justify-center shadow-md">
+          <div className="w-11 h-11 mx-auto rounded-full bg-white border-2 border-luxe-gold flex items-center justify-center p-1 shadow-md">
             <img src="/carliz-logo.png" alt="CARLIZ" className="w-6 h-6 object-contain" />
           </div>
         )}
@@ -98,8 +98,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative",
                     isActive
-                      ? "bg-gradient-to-r from-luxe-gold/20 to-luxe-gold/10 text-midnight-blue border-l-2 border-luxe-gold shadow-sm"
-                      : "text-stainless-silver hover:bg-luxe-gold/5 hover:text-midnight-blue hover:translate-x-1"
+                      ? "bg-gradient-to-r from-luxe-gold/20 to-luxe-gold/10 dark:from-luxe-gold/25 dark:to-luxe-gold/15 text-midnight-blue dark:text-white border-l-2 border-luxe-gold shadow-sm sidebar-active-link"
+                      : "text-stainless-silver hover:bg-luxe-gold/5 hover:text-midnight-blue dark:hover:text-[#ECEAE5] hover:translate-x-1"
                   )}
                 >
                   <item.icon className={cn("w-5 h-5 shrink-0 transition-all", isActive ? "text-luxe-gold" : "group-hover:text-luxe-gold")} />
@@ -114,10 +114,10 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-luxe-gold/15 bg-gradient-to-t from-white/50 to-transparent">
+      <div className="p-4 border-t border-luxe-gold/15 dark:border-luxe-gold/10 bg-gradient-to-t from-white/50 dark:from-transparent to-transparent">
         {!collapsed && user && (
-          <div className="mb-4 px-3 py-3 rounded-lg bg-luxe-gold/8 border border-luxe-gold/20">
-            <p className="text-sm font-semibold text-midnight-blue truncate">{user.first_name}</p>
+          <div className="mb-4 px-3 py-3 rounded-lg bg-luxe-gold/8 dark:bg-luxe-gold/10 border border-luxe-gold/20 dark:border-luxe-gold/30">
+            <p className="text-sm font-semibold text-midnight-blue dark:text-[#ECEAE5] truncate">{user.first_name}</p>
             <p className="text-xs text-stainless-silver truncate mt-1">{user.role?.name || 'Usuario'}</p>
           </div>
         )}

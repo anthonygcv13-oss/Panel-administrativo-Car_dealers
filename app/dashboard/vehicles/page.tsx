@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Vehicle, VehicleStatus } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -13,14 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -48,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function VehiclesPage() {
   const { 
@@ -92,6 +85,14 @@ export default function VehiclesPage() {
     id_supplier: 0,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, brandFilter])
+
   const filteredVehicles = vehicles.filter(vehicle => {
     const brand = brands.find(b => b.id_brand === vehicle.id_brand)
     const model = models.find(m => m.id_model === vehicle.id_model)
@@ -104,6 +105,12 @@ export default function VehiclesPage() {
     const matchesBrand = brandFilter === 'all' || vehicle.id_brand.toString() === brandFilter
     return matchesSearch && matchesStatus && matchesBrand
   })
+
+  const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage)
+  const paginatedVehicles = filteredVehicles.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const handleOpenDialog = (vehicle?: Vehicle) => {
     if (vehicle) {
@@ -192,9 +199,9 @@ export default function VehiclesPage() {
 
   const getStatusBadge = (status: VehicleStatus) => {
     const styles = {
-      available: 'bg-green-100 text-green-700 border-green-200',
-      sold: 'bg-red-100 text-red-700 border-red-200',
-      maintenance: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      available: 'bg-green-55 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800',
+      sold: 'bg-red-55 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800',
+      maintenance: 'bg-yellow-55 text-yellow-700 border-yellow-200 dark:bg-yellow-950/20 dark:text-yellow-400 dark:border-yellow-800',
     }
     const labels = {
       available: 'Disponible',
@@ -202,7 +209,7 @@ export default function VehiclesPage() {
       maintenance: 'Mantenimiento',
     }
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${styles[status]}`}>
         {labels[status]}
       </span>
     )
@@ -319,71 +326,71 @@ export default function VehiclesPage() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Placa</TableHead>
-                  <TableHead>Marca / Modelo</TableHead>
-                  <TableHead>Año</TableHead>
-                  <TableHead>Color</TableHead>
-                  <TableHead>Kilometraje</TableHead>
-                  <TableHead>Precio Venta</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVehicles.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No se encontraron vehículos
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredVehicles.map(vehicle => {
-                    const brand = brands.find(b => b.id_brand === vehicle.id_brand)
-                    const model = models.find(m => m.id_model === vehicle.id_model)
-                    
-                    const primaryImg = vehicleImages.find(img => img.id_vehicle === vehicle.id_vehicle && img.is_primary)
-                    const fallbackImg = vehicleImages.find(img => img.id_vehicle === vehicle.id_vehicle)
-                    const vehicleImg = primaryImg || fallbackImg
+        {/* Vehicles Card Grid */}
+        {paginatedVehicles.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Car className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron vehículos</p>
+              <p className="text-sm">Intenta buscar con otros términos o filtros.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedVehicles.map((vehicle) => {
+                const brand = brands.find(b => b.id_brand === vehicle.id_brand)
+                const model = models.find(m => m.id_model === vehicle.id_model)
+                
+                const primaryImg = vehicleImages.find(img => img.id_vehicle === vehicle.id_vehicle && img.is_primary)
+                const fallbackImg = vehicleImages.find(img => img.id_vehicle === vehicle.id_vehicle)
+                const vehicleImg = primaryImg || fallbackImg
 
-                    return (
-                      <TableRow key={vehicle.id_vehicle} className="hover:bg-muted/30">
-                        <TableCell className="font-mono font-medium">{vehicle.license_plate}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {vehicleImg ? (
-                              <img src={vehicleImg.url} alt="Vehículo" className="w-12 h-12 rounded-lg object-cover bg-muted border border-border" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-[#C9A961]/10 flex items-center justify-center border border-[#C9A961]/20">
-                                <Car className="w-6 h-6 text-[#C9A961]" />
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium">{brand?.name}</p>
-                              <p className="text-sm text-muted-foreground">{model?.name}</p>
-                            </div>
+                return (
+                  <Card 
+                    key={vehicle.id_vehicle} 
+                    className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between overflow-hidden"
+                  >
+                    <div>
+                      {/* Card Image Area */}
+                      <div className="relative aspect-video w-full overflow-hidden bg-muted border-b border-border/40">
+                        {vehicleImg ? (
+                          <img 
+                            src={vehicleImg.url} 
+                            alt="Vehículo" 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
+                            <Car className="w-12 h-12 text-[#C9A961]/30 group-hover:scale-110 transition-transform duration-300" />
                           </div>
-                        </TableCell>
-                        <TableCell>{vehicle.year}</TableCell>
-                        <TableCell>{vehicle.color}</TableCell>
-                        <TableCell>{vehicle.mileage.toLocaleString()} km</TableCell>
-                        <TableCell className="font-medium text-[#C9A961]">
-                          ${vehicle.sale_price.toLocaleString()}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
-                        <TableCell className="text-right">
+                        )}
+                        
+                        {/* Badges on image */}
+                        <span className="absolute top-3 left-3 bg-[#1A1F3D]/90 dark:bg-[#121215]/95 text-[#C9A961] px-2.5 py-0.5 rounded text-xs font-mono font-bold shadow-md border border-[#C9A961]/35 uppercase">
+                          {vehicle.license_plate}
+                        </span>
+                        <div className="absolute top-3 right-3">
+                          {getStatusBadge(vehicle.status)}
+                        </div>
+                      </div>
+
+                      <CardContent className="p-5 space-y-4">
+                        {/* Title & Actions */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors leading-tight">
+                              {brand?.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-0.5 font-medium">{model?.name}</p>
+                          </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted flex-shrink-0">
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem onClick={() => handleView(vehicle)}>
                                 <Eye className="w-4 h-4 mr-2" />
                                 Ver detalles
@@ -398,22 +405,49 @@ export default function VehiclesPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(vehicle.id_vehicle)}
-                                className="text-red-600 focus:text-red-600"
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Eliminar
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        </div>
+
+                        {/* Vehicle Details */}
+                        <div className="grid grid-cols-2 gap-3 text-sm pt-2.5 border-t border-border/40">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Año / Color</span>
+                            <span className="font-medium text-foreground truncate mt-0.5">{vehicle.year} • {vehicle.color}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Kilometraje</span>
+                            <span className="font-medium text-foreground mt-0.5">{vehicle.mileage.toLocaleString()} km</span>
+                          </div>
+                        </div>
+
+                        {/* Price section */}
+                        <div className="pt-2.5 border-t border-border/40 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Precio Venta</span>
+                          <span className="text-xl font-bold text-[#C9A961]">${vehicle.sale_price.toLocaleString()}</span>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}

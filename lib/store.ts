@@ -202,7 +202,7 @@ export interface Notification {
 }
 
 // Mock data based on SQL file
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000/api'
 
 // Generic API caller with token auth
 const getAuthHeaders = () => {
@@ -226,6 +226,9 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     }
   })
   if (!response.ok) {
+    if (response.status === 401) {
+      useAuthStore.getState().logout()
+    }
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.error || errorData.message || `HTTP error ${response.status}`)
   }
@@ -376,10 +379,22 @@ export const useDataStore = create<DataState>()(
       notifications: [],
       
       fetchInitialData: async () => {
+        const token = useAuthStore.getState().token
+        if (!token) return
+
         try {
           const apiFetch = async (endpoint: string) => {
-            const res = await apiRequest(endpoint)
-            return res.success ? res.data : []
+            try {
+              const res = await apiRequest(endpoint)
+              return res.success ? res.data : []
+            } catch (error) {
+              if (error instanceof TypeError || (error instanceof Error && error.message.toLowerCase().includes('fetch'))) {
+                console.warn(`Unable to fetch endpoint ${endpoint} (backend offline or network error)`)
+              } else {
+                console.error(`Error fetching endpoint ${endpoint}:`, error)
+              }
+              return []
+            }
           }
 
           const [
@@ -649,13 +664,20 @@ export const useDataStore = create<DataState>()(
       },
 
       fetchNotifications: async () => {
+        const token = useAuthStore.getState().token
+        if (!token) return
+
         try {
           const res = await apiRequest('/notifications')
           if (res.success) {
             set({ notifications: res.data })
           }
         } catch (error) {
-          console.error("Error fetching notifications:", error)
+          if (error instanceof TypeError || (error instanceof Error && error.message.toLowerCase().includes('fetch'))) {
+            console.warn("Unable to fetch notifications (backend offline or network error)")
+          } else {
+            console.error("Error fetching notifications:", error)
+          }
         }
       },
       markNotificationAsRead: async (id) => {

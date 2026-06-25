@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Payment, SaleStatus, PaymentMethod } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -13,14 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -36,8 +28,13 @@ import {
   CreditCard,
   DollarSign,
   Banknote,
-  Building
+  Building,
+  Calendar,
+  User,
+  Car,
+  FileText
 } from 'lucide-react'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function PaymentsPage() {
   const { payments, sales, customers, vehicles, brands, users, addPayment } = useDataStore()
@@ -53,6 +50,14 @@ export default function PaymentsPage() {
     id_vehicle_sale: 0,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, methodFilter])
+
   const filteredPayments = payments.filter(payment => {
     const sale = sales.find(s => s.id_vehicle_sale === payment.id_vehicle_sale)
     const customer = customers.find(c => c.id_customer === sale?.id_customer)
@@ -62,6 +67,12 @@ export default function PaymentsPage() {
     const matchesMethod = methodFilter === 'all' || payment.payment_method === methodFilter
     return matchesSearch && matchesMethod
   })
+
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage)
+  const paginatedPayments = filteredPayments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const totalPayments = payments.reduce((acc, p) => acc + p.amount, 0)
   const cashPayments = payments.filter(p => p.payment_method === 'cash').reduce((acc, p) => acc + p.amount, 0)
@@ -88,9 +99,9 @@ export default function PaymentsPage() {
 
   const getMethodBadge = (method: PaymentMethod) => {
     const styles = {
-      cash: 'bg-green-100 text-green-700 border-green-200',
-      card: 'bg-blue-100 text-blue-700 border-blue-200',
-      transfer: 'bg-purple-100 text-purple-700 border-purple-200',
+      cash: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800',
+      card: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800',
+      transfer: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-800',
     }
     const labels = {
       cash: 'Efectivo',
@@ -98,12 +109,12 @@ export default function PaymentsPage() {
       transfer: 'Transferencia',
     }
     const icons = {
-      cash: <Banknote className="w-3 h-3" />,
-      card: <CreditCard className="w-3 h-3" />,
-      transfer: <Building className="w-3 h-3" />,
+      cash: <Banknote className="w-3.5 h-3.5" />,
+      card: <CreditCard className="w-3.5 h-3.5" />,
+      transfer: <Building className="w-3.5 h-3.5" />,
     }
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${styles[method]}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${styles[method]}`}>
         {icons[method]}
         {labels[method]}
       </span>
@@ -112,9 +123,9 @@ export default function PaymentsPage() {
 
   const getStatusBadge = (status: SaleStatus) => {
     const styles = {
-      pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      paid: 'bg-green-100 text-green-700 border-green-200',
-      cancelled: 'bg-red-100 text-red-700 border-red-200',
+      pending: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/20 dark:text-yellow-400 dark:border-yellow-800',
+      paid: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800',
+      cancelled: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800',
     }
     const labels = {
       pending: 'Pendiente',
@@ -122,7 +133,7 @@ export default function PaymentsPage() {
       cancelled: 'Cancelado',
     }
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${styles[status]}`}>
         {labels[status]}
       </span>
     )
@@ -151,8 +162,8 @@ export default function PaymentsPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <Banknote className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-950/20">
+                <Banknote className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Efectivo</p>
@@ -162,8 +173,8 @@ export default function PaymentsPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center dark:bg-blue-950/20">
+                <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Tarjeta</p>
@@ -173,8 +184,8 @@ export default function PaymentsPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                <Building className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center dark:bg-purple-950/20">
+                <Building className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Transferencia</p>
@@ -210,7 +221,7 @@ export default function PaymentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleOpenDialog} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto">
+              <Button onClick={handleOpenDialog} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Pago
               </Button>
@@ -218,62 +229,91 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>ID</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Venta</TableHead>
-                  <TableHead>Método</TableHead>
-                  <TableHead>Monto</TableHead>
-                  <TableHead>Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPayments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No se encontraron pagos
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredPayments.map(payment => {
-                    const sale = sales.find(s => s.id_vehicle_sale === payment.id_vehicle_sale)
-                    const customer = customers.find(c => c.id_customer === sale?.id_customer)
-                    const vehicle = vehicles.find(v => v.id_vehicle === sale?.id_vehicle)
-                    const brand = brands.find(b => b.id_brand === vehicle?.id_brand)
-                    return (
-                      <TableRow key={payment.id_payment} className="hover:bg-muted/30">
-                        <TableCell className="font-mono">#{payment.id_payment.toString().padStart(4, '0')}</TableCell>
-                        <TableCell>{new Date(payment.date).toLocaleDateString('es-ES')}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{customer?.first_name} {customer?.last_name}</p>
+        {/* Payments Card Grid */}
+        {paginatedPayments.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Banknote className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron pagos</p>
+              <p className="text-sm">Intenta buscar con otros términos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedPayments.map((payment) => {
+                const sale = sales.find(s => s.id_vehicle_sale === payment.id_vehicle_sale)
+                const customer = customers.find(c => c.id_customer === sale?.id_customer)
+                const vehicle = vehicles.find(v => v.id_vehicle === sale?.id_vehicle)
+                const brand = brands.find(b => b.id_brand === vehicle?.id_brand)
+                const model = useDataStore.getState().models?.find(m => m.id_model === vehicle?.id_model)
+
+                return (
+                  <Card 
+                    key={payment.id_payment} 
+                    className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                  >
+                    <CardContent className="p-6 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm font-bold text-foreground">
+                              Pago #{payment.id_payment.toString().padStart(4, '0')}
+                            </span>
+                            {getStatusBadge(payment.status)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm">{brand?.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">Venta #{sale?.id_vehicle_sale}</p>
+                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground font-medium">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>{new Date(payment.date).toLocaleDateString('es-ES')}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>{getMethodBadge(payment.payment_method)}</TableCell>
-                        <TableCell className="font-bold text-[#C9A961]">
+                        </div>
+                        {getMethodBadge(payment.payment_method)}
+                      </div>
+
+                      {/* Customer Details */}
+                      <div className="space-y-1.5 pt-2 border-t border-border/40 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <User className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span className="font-medium text-foreground">
+                            {customer ? `${customer.first_name} ${customer.last_name}` : 'Cliente Desconocido'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Car className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span className="truncate">
+                            {brand ? `${brand.name} ${model?.name || ''}` : 'Vehículo'} ({vehicle?.license_plate || 'Sin Placa'})
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <FileText className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span className="font-mono text-xs">Venta #{payment.id_vehicle_sale}</span>
+                        </div>
+                      </div>
+
+                      {/* Payment Amount */}
+                      <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground uppercase font-semibold">Monto Pagado</span>
+                        <span className="text-xl font-bold text-[#C9A961]">
                           ${payment.amount.toLocaleString()}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Create Dialog */}

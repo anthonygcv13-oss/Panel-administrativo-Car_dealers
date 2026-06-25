@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, User, UserStatus } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -14,14 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,13 +22,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Search, Pencil, Trash2, MoreHorizontal, UserCog, Shield } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, MoreHorizontal, UserCog, Shield, Mail, Calendar, User as UserIcon } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function UsersPage() {
   const { users, roles, addUser, updateUser, deleteUser } = useDataStore()
@@ -51,9 +44,23 @@ export default function UsersPage() {
     id_role: 0,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   const filteredUsers = users.filter(user =>
     user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   )
 
   const handleOpenDialog = (user?: User) => {
@@ -100,9 +107,9 @@ export default function UsersPage() {
 
   const getStatusBadge = (status: UserStatus) => {
     const styles = {
-      active: 'bg-green-100 text-green-700 border-green-200',
-      inactive: 'bg-gray-100 text-gray-700 border-gray-200',
-      blocked: 'bg-red-100 text-red-700 border-red-200',
+      active: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800',
+      inactive: 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
+      blocked: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800',
     }
     const labels = {
       active: 'Activo',
@@ -110,7 +117,7 @@ export default function UsersPage() {
       blocked: 'Bloqueado',
     }
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+      <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${styles[status]}`}>
         {labels[status]}
       </span>
     )
@@ -119,14 +126,15 @@ export default function UsersPage() {
   const getRoleBadge = (roleId: number) => {
     const role = roles.find(r => r.id_role === roleId)
     const colors: Record<string, string> = {
-      admin: 'bg-[#C9A961]/20 text-[#C9A961]',
-      gerente: 'bg-[#1A1F3D]/20 text-[#1A1F3D]',
-      vendedor: 'bg-blue-100 text-blue-700',
-      cajero: 'bg-purple-100 text-purple-700',
-      soporte: 'bg-gray-100 text-gray-700',
+      admin: 'bg-[#C9A961]/15 text-[#C9A961] dark:bg-[#C9A961]/25 dark:text-[#E8D08D] border border-[#C9A961]/20',
+      gerente: 'bg-[#1A1F3D]/10 text-[#1A1F3D] dark:bg-slate-800 dark:text-slate-200 border border-slate-700/10 dark:border-slate-700/50',
+      vendedor: 'bg-blue-50 text-blue-700 dark:bg-blue-900/15 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30',
+      cajero: 'bg-purple-50 text-purple-700 dark:bg-purple-900/15 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30',
+      soporte: 'bg-gray-50 text-gray-700 dark:bg-zinc-800/50 dark:text-zinc-400 border border-gray-100 dark:border-zinc-800',
     }
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${colors[role?.name || ''] || 'bg-gray-100 text-gray-700'}`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full capitalize ${colors[role?.name || ''] || 'bg-gray-100 text-gray-700'}`}>
+        <Shield className="w-3 h-3" />
         {role?.name || 'Sin rol'}
       </span>
     )
@@ -155,8 +163,8 @@ export default function UsersPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <UserCog className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-950/20">
+                <UserCog className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Activos</p>
@@ -166,8 +174,8 @@ export default function UsersPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                <UserCog className="w-6 h-6 text-gray-600" />
+              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center dark:bg-zinc-800">
+                <UserCog className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Inactivos</p>
@@ -177,8 +185,8 @@ export default function UsersPage() {
           </Card>
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#8B1538]/20 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-[#8B1538]" />
+              <div className="w-12 h-12 rounded-lg bg-[#8B1538]/20 flex items-center justify-center border border-[#8B1538]/10">
+                <Shield className="w-6 h-6 text-[#8B1538] dark:text-[#C9A961]" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Administradores</p>
@@ -201,7 +209,7 @@ export default function UsersPage() {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto">
+              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Usuario
               </Button>
@@ -209,75 +217,103 @@ export default function UsersPage() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Usuario</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Registro</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No se encontraron usuarios
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsers.map(user => (
-                    <TableRow key={user.id_user} className="hover:bg-muted/30">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#C9A961]/20 flex items-center justify-center">
-                            <span className="text-sm font-medium text-[#C9A961]">
-                              {user.first_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                            </span>
-                          </div>
-                          <span className="font-medium">{user.first_name}</span>
+        {/* Users Card Grid */}
+        {paginatedUsers.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <UserIcon className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron usuarios</p>
+              <p className="text-sm">Intenta buscar con otros términos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedUsers.map((user) => (
+                <Card 
+                  key={user.id_user} 
+                  className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                >
+                  <CardContent className="p-6 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-[#C9A961]/15 dark:bg-[#C9A961]/25 flex items-center justify-center border border-[#C9A961]/20 font-semibold text-[#C9A961] text-lg uppercase">
+                          {user.first_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{getRoleBadge(user.id_role)}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(user.created_at).toLocaleDateString('es-ES')}
-                      </TableCell>
-                      <TableCell className="text-right">
+                        <div>
+                          <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors">
+                            {user.first_name}
+                          </h3>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {getRoleBadge(user.id_role)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(user.status)}
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="w-40">
                             <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
                               <Pencil className="w-4 h-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDelete(user.id_user)}
-                              className="text-red-600 focus:text-red-600"
+                              className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </div>
+                    </div>
+
+                    {/* Email */}
+                    <div className="space-y-2 pt-2.5 border-t border-border/40 text-sm">
+                      <div className="flex items-center gap-2.5 text-muted-foreground truncate">
+                        <Mail className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                        <span className="truncate">{user.email}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="pt-2.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground/80">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>Registrado:</span>
+                      </div>
+                      <span className="font-medium text-foreground">
+                        {new Date(user.created_at).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}

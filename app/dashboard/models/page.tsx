@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Model, GeneralStatus, FuelType, TransmissionType, BodyType } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -14,14 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,13 +22,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Search, Pencil, Trash2, MoreHorizontal, Building2 } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, MoreHorizontal, Building2, Calendar, Fuel, Cog, Car } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { AdminPagination } from '@/components/admin/pagination'
 
 export default function ModelsPage() {
   const { models, brands, addModel, updateModel, deleteModel } = useDataStore()
@@ -58,6 +51,14 @@ export default function ModelsPage() {
     status: 'active' as GeneralStatus,
   })
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, brandFilter])
+
   const filteredModels = models.filter(model => {
     const brand = brands.find(b => b.id_brand === model.id_brand)
     const matchesSearch = 
@@ -66,6 +67,12 @@ export default function ModelsPage() {
     const matchesBrand = brandFilter === 'all' || model.id_brand.toString() === brandFilter
     return matchesSearch && matchesBrand
   })
+
+  const totalPages = Math.ceil(filteredModels.length / itemsPerPage)
+  const paginatedModels = filteredModels.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const handleOpenDialog = (model?: Model) => {
     if (model) {
@@ -141,6 +148,18 @@ export default function ModelsPage() {
     convertible: 'Convertible',
   }
 
+  const getStatusBadge = (status: GeneralStatus) => {
+    return status === 'active' ? (
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
+        Activo
+      </span>
+    ) : (
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
+        Inactivo
+      </span>
+    )
+  }
+
   return (
     <div className="min-h-screen">
       <Header 
@@ -177,7 +196,7 @@ export default function ModelsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto">
+              <Button onClick={() => handleOpenDialog()} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] w-full md:w-auto font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Modelo
               </Button>
@@ -185,76 +204,114 @@ export default function ModelsPage() {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Combustible</TableHead>
-                  <TableHead>Transmisión</TableHead>
-                  <TableHead>Año</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredModels.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No se encontraron modelos
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredModels.map(model => {
-                    const brand = brands.find(b => b.id_brand === model.id_brand)
-                    return (
-                      <TableRow key={model.id_model} className="hover:bg-muted/30">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#1A1F3D]/20 flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-[#1A1F3D]" />
-                            </div>
-                            <span className="font-medium">{model.name}</span>
+        {/* Card Grid */}
+        {paginatedModels.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Building2 className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-lg font-medium">No se encontraron modelos</p>
+              <p className="text-sm">Intenta buscar con otros términos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedModels.map((model) => {
+                const brand = brands.find(b => b.id_brand === model.id_brand)
+                return (
+                  <Card 
+                    key={model.id_model} 
+                    className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                  >
+                    <CardContent className="p-6 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#1A1F3D]/10 dark:bg-[#C9A961]/25 flex items-center justify-center border border-[#1A1F3D]/20 group-hover:scale-105 transition-transform">
+                            <Building2 className="w-6 h-6 text-[#1A1F3D] dark:text-[#C9A961]" />
                           </div>
-                        </TableCell>
-                        <TableCell>{brand?.name}</TableCell>
-                        <TableCell>{bodyTypeLabels[model.body_type]}</TableCell>
-                        <TableCell>{fuelTypeLabels[model.fuel_type]}</TableCell>
-                        <TableCell>{transmissionLabels[model.transmission]}</TableCell>
-                        <TableCell>{model.launch_year}</TableCell>
-                        <TableCell className="text-right">
+                          <div>
+                            <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors">
+                              {model.name}
+                            </h3>
+                            <span className="text-xs text-muted-foreground font-medium">{brand?.name || 'Sin marca'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(model.status)}
+
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="w-40">
                               <DropdownMenuItem onClick={() => handleOpenDialog(model)}>
                                 <Pencil className="w-4 h-4 mr-2" />
                                 Editar
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(model.id_model)}
-                                className="text-red-600 focus:text-red-600"
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Eliminar
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      {model.description && (
+                        <p className="text-sm text-muted-foreground/80 line-clamp-2 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/20">
+                          {model.description}
+                        </p>
+                      )}
+
+                      {/* Specs info */}
+                      <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 pt-3 border-t border-border/40 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Car className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span>{bodyTypeLabels[model.body_type]}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Fuel className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span>{fuelTypeLabels[model.fuel_type]}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Cog className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span>{transmissionLabels[model.transmission]}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="w-4 h-4 text-[#C9A961] flex-shrink-0" />
+                          <span>Lanzamiento: {model.launch_year}</span>
+                        </div>
+                      </div>
+
+                      {/* Specs: capacity and engine */}
+                      <div className="pt-2 flex items-center justify-between text-xs text-muted-foreground/80 border-t border-border/20">
+                        <span>Cilindrada: {model.engine_displacement}L</span>
+                        <span>{model.number_doors}p / {model.passenger_capacity} asientos</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}
