@@ -65,7 +65,7 @@ export function NewSaleModal({ isOpen, onClose }: NewSaleModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl bg-white border border-luxe-gold/20 shadow-2xl">
+      <DialogContent className="sm:max-w-3xl bg-white border border-luxe-gold/20 shadow-2xl">
         {/* Header with close button */}
         <div className="absolute right-4 top-4 z-50">
           <button

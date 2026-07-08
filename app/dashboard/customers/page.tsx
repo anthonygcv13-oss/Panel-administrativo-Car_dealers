@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Customer } from '@/lib/store'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import SuppliersPage from '@/app/dashboard/suppliers/page'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -103,11 +105,18 @@ export default function CustomersPage() {
   return (
     <div className="min-h-screen">
       <Header 
-        title="Gestión de Clientes" 
-        description="Administra la información de clientes"
+        title="Directorio de Contactos" 
+        description="Administra los clientes y proveedores del sistema"
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-6">
+        <Tabs defaultValue="customers" className="space-y-6">
+          <TabsList className="bg-muted p-1">
+            <TabsTrigger value="customers">Clientes</TabsTrigger>
+            <TabsTrigger value="suppliers">Proveedores</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="customers" className="space-y-6 mt-0">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-border/50">
@@ -240,19 +249,21 @@ export default function CustomersPage() {
                     </div>
 
                     {/* Footer */}
-                    <div className="pt-2.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground/80">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>Registrado:</span>
+                    {customer.created_at && (
+                      <div className="pt-2.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground/80">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>Registrado:</span>
+                        </div>
+                        <span className="font-medium text-foreground">
+                          {new Date(customer.created_at).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
                       </div>
-                      <span className="font-medium text-foreground">
-                        {new Date(customer.created_at).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -268,6 +279,11 @@ export default function CustomersPage() {
             </Card>
           </div>
         )}
+          </TabsContent>
+          <TabsContent value="suppliers" className="mt-0">
+            <SuppliersPage hideHeader={true} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Create/Edit Dialog */}

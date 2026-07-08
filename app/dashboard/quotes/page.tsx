@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Quote, QuoteStatus } from '@/lib/store'
+import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -44,7 +45,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPagination } from '@/components/admin/pagination'
 
-export default function QuotesPage() {
+export default function QuotesPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { quotes, vehicles, customers, brands, models, addQuote, updateQuote } = useDataStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -161,13 +162,15 @@ export default function QuotesPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        title="Gestión de Cotizaciones" 
-        description="Administra las cotizaciones de vehículos"
-      />
+    <div className={hideHeader ? "" : "min-h-screen"}>
+      {!hideHeader && (
+        <Header 
+          title="Gestión de Cotizaciones" 
+          description="Administra las cotizaciones de vehículos"
+        />
+      )}
       
-      <div className="p-6 space-y-6">
+      <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-border/50">
@@ -346,7 +349,7 @@ export default function QuotesPage() {
                         <div className="text-xs text-muted-foreground">
                           <span className="block uppercase tracking-wider font-semibold">Precio Estimado</span>
                           <span className="text-lg font-bold text-[#C9A961]">
-                            ${quote.estimated_price.toLocaleString()}
+                            ${formatPrice(quote.estimated_price)}
                           </span>
                         </div>
                         <div className="text-right text-xs text-muted-foreground">
@@ -356,6 +359,29 @@ export default function QuotesPage() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Botones de Aceptar / Rechazar para cotizaciones pendientes */}
+                      {quote.status === 'pending' && (
+                        <div className="pt-3 border-t border-border/40 flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex-1 text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-950/20"
+                            onClick={() => updateQuote(quote.id_quote, { status: 'rejected' })}
+                          >
+                            <XCircle className="w-3.5 h-3.5 mr-1" />
+                            Rechazar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center justify-center"
+                            onClick={() => updateQuote(quote.id_quote, { status: 'approved' })}
+                          >
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                            Aceptar
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore } from '@/lib/store'
+import { formatPrice } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Car, 
@@ -35,8 +36,10 @@ const DARK_COLORS = ['#C9A961', '#E11D48', '#9E9E9E', '#D4B978', '#2D2D2D']
 export default function DashboardPage() {
   const { vehicles, customers, sales, quotes, payments, brands } = useDataStore()
   const [isDark, setIsDark] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     setIsDark(document.documentElement.classList.contains('dark'))
     const observer = new MutationObserver(() => {
       setIsDark(document.documentElement.classList.contains('dark'))
@@ -49,10 +52,10 @@ export default function DashboardPage() {
 
   // Calculate stats
   const availableVehicles = vehicles.filter(v => v.status === 'available').length
-  const totalSalesAmount = sales.reduce((acc, s) => acc + s.final_price, 0)
+  const totalSalesAmount = sales.reduce((acc, s) => acc + parseFloat(s.final_price as any || 0), 0)
   const paidSales = sales.filter(s => s.status === 'paid')
   const pendingQuotes = quotes.filter(q => q.status === 'pending').length
-  const totalPayments = payments.reduce((acc, p) => acc + p.amount, 0)
+  const totalPayments = payments.reduce((acc, p) => acc + parseFloat(p.amount as any || 0), 0)
 
   // Monthly sales data (mock)
   const monthlySalesData = [
@@ -89,41 +92,153 @@ export default function DashboardPage() {
     return { ...sale, vehicle, customer, brand }
   })
 
+  // Dynamic trend calculations
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() // 0-indexed
+
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
+  const prevMonthEnd = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999)
+
+  const isSameMonthYear = (dateStr: string | Date | null | undefined, year: number, month: number) => {
+    if (!dateStr) return false
+    const d = new Date(dateStr)
+    return d.getFullYear() === year && d.getMonth() === month
+  }
+
+  // 1. Vehículos Disponibles Trend
+  const availableNow = availableVehicles
+  const availablePrev = vehicles.filter(v => {
+    const purchDate = v.purchase_date ? new Date(v.purchase_date) : null
+    if (!purchDate || purchDate > prevMonthEnd) return false
+    if (v.status === 'available') return true
+    if (v.status === 'sold') {
+      const sale = sales.find(s => s.id_vehicle === v.id_vehicle)
+      if (sale && sale.date && new Date(sale.date) > prevMonthEnd) {
+        return true
+      }
+    }
+    return false
+  }).length
+
+  const getTrend = (current: number, previous: number) => {
+    if (previous === 0) {
+      return { trend: current > 0 ? '+100%' : '0%', trendUp: true }
+    }
+    const pct = ((current - previous) / previous) * 100
+    const trendUp = pct >= 0
+    const sign = trendUp ? '+' : ''
+    return {
+      trend: `${sign}${Math.round(pct)}%`,
+      trendUp
+    }
+  }
+
+  const vehiclesTrend = getTrend(availableNow, availablePrev)
+
+  // 2. Clientes Registrados Trend
+  const getCustomerRegDate = (cId: number) => {
+    const customerSales = sales.filter(s => s.id_customer === cId)
+    const customerQuotes = quotes.filter(q => q.id_customer === cId)
+    const dates = [
+      ...customerSales.map(s => s.date ? new Date(s.date) : null),
+      ...customerQuotes.map(q => q.date || q.created_at ? new Date((q.date || q.created_at) as string) : null)
+    ].filter((d): d is Date => d !== null)
+
+    if (dates.length > 0) {
+      return new Date(Math.min(...dates.map(d => d.getTime())))
+    }
+    return new Date(2025, 0, 1) // default fallback
+  }
+
+  const customersNow = customers.length
+  const customersPrev = customers.filter(c => {
+    const regDate = getCustomerRegDate(c.id_customer)
+    return regDate <= prevMonthEnd
+  }).length
+  const customersTrend = getTrend(customersNow, customersPrev)
+
+  // 3. Ventas Totales Trend
+  const salesCurrentMonth = sales
+    .filter(s => isSameMonthYear(s.date, currentYear, currentMonth))
+    .reduce((acc, s) => acc + parseFloat(s.final_price as any || 0), 0)
+  const salesPrevMonth = sales
+    .filter(s => isSameMonthYear(s.date, prevYear, prevMonth))
+    .reduce((acc, s) => acc + parseFloat(s.final_price as any || 0), 0)
+  const salesTrend = getTrend(salesCurrentMonth, salesPrevMonth)
+
+  // 4. Cotizaciones Pendientes Trend
+  const quotesCurrentMonth = quotes.filter(q => q.status === 'pending' && isSameMonthYear(q.date || q.created_at, currentYear, currentMonth)).length
+  const quotesPrevMonth = quotes.filter(q => q.status === 'pending' && isSameMonthYear(q.date || q.created_at, prevYear, prevMonth)).length
+  const quotesTrend = getTrend(quotesCurrentMonth, quotesPrevMonth)
+
   const stats = [
     {
       title: 'Vehículos Disponibles',
       value: availableVehicles,
       total: vehicles.length,
       icon: Car,
-      trend: '+12%',
-      trendUp: true,
+      trend: vehiclesTrend.trend,
+      trendUp: vehiclesTrend.trendUp,
       color: 'bg-[#C9A961]'
     },
     {
       title: 'Clientes Registrados',
       value: customers.length,
       icon: Users,
-      trend: '+8%',
-      trendUp: true,
+      trend: customersTrend.trend,
+      trendUp: customersTrend.trendUp,
       color: 'bg-[#1A1F3D]'
     },
     {
       title: 'Ventas Totales',
-      value: `$${totalSalesAmount.toLocaleString()}`,
+      value: `$${formatPrice(totalSalesAmount)}`,
       icon: ShoppingCart,
-      trend: '+23%',
-      trendUp: true,
+      trend: salesTrend.trend,
+      trendUp: salesTrend.trendUp,
       color: 'bg-[#8B1538]'
     },
     {
       title: 'Cotizaciones Pendientes',
       value: pendingQuotes,
       icon: FileText,
-      trend: '-5%',
-      trendUp: false,
+      trend: quotesTrend.trend,
+      trendUp: quotesTrend.trendUp,
       color: 'bg-[#B8B8B8]'
     },
   ]
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white">
+        <Header 
+          title="Dashboard" 
+          description="Bienvenido al panel de administración de CARLIZ"
+        />
+        <div className="p-8 space-y-8 animate-pulse">
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card 
+                key={i} 
+                className="bg-white/80 dark:bg-transparent border border-luxe-gold/20 p-5 xl:p-6 rounded-xl min-h-[180px] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="h-4 bg-stainless-silver/20 dark:bg-stainless-silver/10 rounded w-2/3"></div>
+                    <div className="w-10 h-10 bg-stainless-silver/20 dark:bg-stainless-silver/10 rounded-lg"></div>
+                  </div>
+                  <div className="h-8 bg-stainless-silver/30 dark:bg-stainless-silver/25 rounded w-1/2 mt-4"></div>
+                </div>
+                <div className="h-3 bg-stainless-silver/20 dark:bg-stainless-silver/10 rounded w-1/3 mt-4 border-t border-luxe-gold/10 pt-4"></div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white">
@@ -138,25 +253,32 @@ export default function DashboardPage() {
           {stats.map((stat, index) => (
             <Card 
               key={index} 
-              className="relative overflow-hidden bg-white/80 dark:bg-transparent premium-dark-card border border-luxe-gold/20 hover:border-luxe-gold/50 transition-all duration-300 group backdrop-blur-sm shadow-sm hover:shadow-lg shadow-black/40 dark:shadow-black/70"
+              className="relative overflow-hidden bg-white/80 dark:bg-transparent premium-dark-card border border-luxe-gold/20 hover:border-luxe-gold/50 transition-all duration-300 group backdrop-blur-sm shadow-sm hover:shadow-lg shadow-black/40 dark:shadow-black/70 flex flex-col justify-between"
             >
               {/* Gradient background accent */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-luxe-gold to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-stainless-silver/80 tracking-wide uppercase">{stat.title}</p>
-                    <p className="text-4xl font-bold mt-3 text-transparent bg-clip-text bg-gradient-to-r from-luxe-gold to-midnight-blue dark:to-white">{stat.value}</p>
+              <CardContent className="p-5 xl:p-6 flex flex-col justify-between h-full min-h-[170px]">
+                <div>
+                  {/* Top Row: Title and Icon */}
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs xl:text-sm font-medium text-stainless-silver/80 tracking-wide uppercase truncate">{stat.title}</p>
+                    <div className={`${stat.color} p-2.5 rounded-lg shadow-sm opacity-90 group-hover:opacity-100 transition-all flex-shrink-0`}>
+                      <stat.icon className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  
+                  {/* Middle Row: Value */}
+                  <div className="mt-3">
+                    <p className="text-2xl xl:text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-luxe-gold to-midnight-blue dark:to-white whitespace-nowrap overflow-hidden text-ellipsis">{stat.value}</p>
                     {stat.total && (
-                      <p className="text-xs text-stainless-silver/60 mt-2">de {stat.total} total</p>
+                      <p className="text-xs text-stainless-silver/60 mt-1">de {stat.total} total</p>
                     )}
                   </div>
-                  <div className={`${stat.color} p-4 rounded-xl shadow-sm opacity-90 group-hover:opacity-100 transition-all`}>
-                    <stat.icon className="w-7 h-7 text-white" />
-                  </div>
                 </div>
-                <div className="flex items-center gap-2 mt-5 pt-4 border-t border-luxe-gold/10">
+
+                {/* Bottom Row: Trend */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-luxe-gold/10">
                   {stat.trendUp ? (
                     <TrendingUp className="w-4 h-4 text-green-600" />
                   ) : (
@@ -207,7 +329,7 @@ export default function DashboardPage() {
                         borderRadius: '12px',
                         color: isDark ? '#F5F5F7' : '#1A1A1A'
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                      formatter={(value: number) => [`$${formatPrice(value)}`, '']}
                     />
                     <Area 
                       type="monotone" 
@@ -344,7 +466,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-[#C9A961]">
-                          ${sale.final_price.toLocaleString()}
+                          ${formatPrice(sale.final_price)}
                         </p>
                         <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
                           sale.status === 'paid' 

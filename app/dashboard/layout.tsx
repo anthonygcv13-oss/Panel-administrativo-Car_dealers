@@ -11,7 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, sidebarCollapsed } = useAuthStore()
   const { fetchInitialData } = useDataStore()
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white dark:from-[#09090B] dark:via-[#0C0C0E] dark:to-[#09090B] text-foreground transition-colors duration-300">
       <Sidebar />
-      <main className="ml-72 transition-all duration-300">
+      <main className={`${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300`}>
         {children}
       </main>
     </div>

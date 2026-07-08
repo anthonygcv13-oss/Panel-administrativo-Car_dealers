@@ -8,7 +8,19 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Mail, CheckCircle, AlertCircle, Sun, Moon } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000/api'
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000/api'
+  }
+
+  return 'https://car-dealership-03qc.onrender.com/api'
+}
+
+const API_URL = getApiUrl()
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')

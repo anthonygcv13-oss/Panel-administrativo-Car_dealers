@@ -45,10 +45,10 @@ function makeRequest(path, method, body, token) {
 
 async function run() {
   try {
-    console.log('Logging in as alex@gmail.com...');
+    console.log('Logging in as anthonygcv1@gmail.com...');
     const loginRes = await makeRequest('/api/auth/login', 'POST', {
-      email: 'alex@gmail.com',
-      password: '1234'
+      email: 'anthonygcv1@gmail.com',
+      password: 'Ac30921446'
     });
 
     console.log('Login status:', loginRes.statusCode);

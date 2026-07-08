@@ -2,6 +2,7 @@
 
 import { Header } from '@/components/admin/header'
 import { useDataStore } from '@/lib/store'
+import { formatPrice } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,13 +41,13 @@ import {
 
 const COLORS = ['#C9A961', '#8B1538', '#1A1F3D', '#B8B8B8', '#2D2D2D']
 
-export default function ReportsPage() {
+export default function ReportsPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { vehicles, customers, sales, payments, brands, quotes } = useDataStore()
   const [period, setPeriod] = useState('month')
 
   // Calculate statistics
-  const totalRevenue = sales.reduce((acc, s) => acc + s.final_price, 0)
-  const totalPayments = payments.reduce((acc, p) => acc + p.amount, 0)
+  const totalRevenue = sales.reduce((acc, s) => acc + parseFloat(s.final_price as any || 0), 0)
+  const totalPayments = payments.reduce((acc, p) => acc + parseFloat(p.amount as any || 0), 0)
   const averageSalePrice = sales.length > 0 ? totalRevenue / sales.length : 0
 
   // Monthly sales data
@@ -83,7 +84,7 @@ export default function ReportsPage() {
   const salesByBrand = brands.map(brand => {
     const brandVehicles = vehicles.filter(v => v.id_brand === brand.id_brand)
     const brandSales = sales.filter(s => brandVehicles.some(v => v.id_vehicle === s.id_vehicle))
-    const revenue = brandSales.reduce((acc, s) => acc + s.final_price, 0)
+    const revenue = brandSales.reduce((acc, s) => acc + parseFloat(s.final_price as any || 0), 0)
     return {
       name: brand.name,
       ventas: brandSales.length,
@@ -98,7 +99,7 @@ export default function ReportsPage() {
   const kpiCards = [
     { 
       title: 'Ingresos Totales', 
-      value: `$${totalRevenue.toLocaleString()}`, 
+      value: `$${formatPrice(totalRevenue)}`, 
       icon: DollarSign,
       color: 'bg-[#C9A961]/20 text-[#C9A961]',
       change: '+15%'
@@ -112,7 +113,7 @@ export default function ReportsPage() {
     },
     { 
       title: 'Precio Promedio', 
-      value: `$${averageSalePrice.toLocaleString()}`, 
+      value: `$${formatPrice(averageSalePrice)}`, 
       icon: TrendingUp,
       color: 'bg-[#1A1F3D]/20 text-[#1A1F3D]',
       change: '+3%'
@@ -127,13 +128,15 @@ export default function ReportsPage() {
   ]
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        title="Reportes y Estadísticas" 
-        description="Análisis detallado del rendimiento del negocio"
-      />
+    <div className={hideHeader ? "" : "min-h-screen"}>
+      {!hideHeader && (
+        <Header 
+          title="Reportes y Estadísticas" 
+          description="Análisis detallado del rendimiento del negocio"
+        />
+      )}
       
-      <div className="p-6 space-y-6">
+      <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Controls */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
@@ -206,7 +209,7 @@ export default function ReportsPage() {
                         border: '1px solid #E5E5E5',
                         borderRadius: '8px'
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Ingresos']}
+                      formatter={(value: number) => [`$${formatPrice(value)}`, 'Ingresos']}
                     />
                     <Area 
                       type="monotone" 
@@ -393,7 +396,7 @@ export default function ReportsPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor del Inventario</span>
                   <span className="font-medium text-[#C9A961]">
-                    ${vehicles.filter(v => v.status === 'available').reduce((acc, v) => acc + v.sale_price, 0).toLocaleString()}
+                    ${formatPrice(vehicles.filter(v => v.status === 'available').reduce((acc, v) => acc + parseFloat(v.sale_price as any || 0), 0))}
                   </span>
                 </div>
               </div>

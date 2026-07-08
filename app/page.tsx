@@ -290,53 +290,6 @@ export default function LoginPage() {
                     )}
                   </Button>
                 </form>
-
-                {/* Divider */}
-                <div className={`flex items-center gap-3 my-6 ${isDark ? 'opacity-50' : ''}`}>
-                  <div
-                    className={`flex-1 h-px transition-colors duration-300 ${
-                      isDark ? 'bg-luxe-gold/20' : 'bg-luxe-gold/15'
-                    }`}
-                  />
-                  <span
-                    className={`text-xs font-semibold transition-colors duration-300 ${
-                      isDark ? 'text-stainless-silver/50' : 'text-stainless-silver/60'
-                    }`}
-                  >
-                    DEMO
-                  </span>
-                  <div
-                    className={`flex-1 h-px transition-colors duration-300 ${
-                      isDark ? 'bg-luxe-gold/20' : 'bg-luxe-gold/15'
-                    }`}
-                  />
-                </div>
-
-                {/* Demo Credentials */}
-                <div
-                  className={`p-4 rounded-lg border-2 transition-all duration-300 ${
-                    isDark
-                      ? 'bg-[#16161A]/60 border-luxe-gold/20'
-                      : 'bg-luxe-gold/5 border-luxe-gold/20'
-                  }`}
-                >
-                  <div className="text-center space-y-2">
-                    <p
-                      className={`text-xs font-bold tracking-wider transition-colors duration-300 ${
-                        isDark ? 'text-soft-gold' : 'text-midnight-blue'
-                      }`}
-                    >
-                      alex@gmail.com
-                    </p>
-                    <p
-                      className={`text-xs font-bold transition-colors duration-300 ${
-                        isDark ? 'text-soft-gold' : 'text-midnight-blue'
-                      }`}
-                    >
-                      1234
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
 

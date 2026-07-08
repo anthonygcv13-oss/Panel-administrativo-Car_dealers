@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Header } from '@/components/admin/header'
 import { useDataStore, Vehicle, VehicleStatus } from '@/lib/store'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import BrandsPage from '@/app/dashboard/brands/page'
+import ModelsPage from '@/app/dashboard/models/page'
+import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,7 +36,9 @@ import {
   MoreHorizontal,
   Eye,
   Image,
-  Star
+  Star,
+  Video,
+  Play
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -42,6 +48,20 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPagination } from '@/components/admin/pagination'
 
+const getYoutubeEmbedUrl = (url: string) => {
+  if (!url) return ''
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/
+  const match = url.match(regExp)
+  if (match && match[2].length === 11) {
+    return `https://www.youtube.com/embed/${match[2]}?autoplay=1`
+  }
+  return ''
+}
+
+const isYoutubeUrl = (url: string) => {
+  return getYoutubeEmbedUrl(url) !== ''
+}
+
 export default function VehiclesPage() {
   const { 
     vehicles, 
@@ -49,12 +69,16 @@ export default function VehiclesPage() {
     models, 
     suppliers, 
     vehicleImages,
+    vehicleVideos,
     addVehicle, 
     updateVehicle, 
     deleteVehicle,
     addVehicleImage,
     updateVehicleImage,
-    deleteVehicleImage
+    deleteVehicleImage,
+    addVehicleVideo,
+    updateVehicleVideo,
+    deleteVehicleVideo
   } = useDataStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -62,11 +86,17 @@ export default function VehiclesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isImagesDialogOpen, setIsImagesDialogOpen] = useState(false)
+  const [isVideosDialogOpen, setIsVideosDialogOpen] = useState(false)
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null)
   const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null)
   const [selectedVehicleForImages, setSelectedVehicleForImages] = useState<Vehicle | null>(null)
-  const [newImageUrl, setNewImageUrl] = useState('')
+  const [selectedVehicleForVideos, setSelectedVehicleForVideos] = useState<Vehicle | null>(null)
+  const [newImageFile, setNewImageFile] = useState<File | null>(null)
+  const [newImagePreview, setNewImagePreview] = useState('')
+  const [newVideoUrl, setNewVideoUrl] = useState('')
   const [isImageLoading, setIsImageLoading] = useState(false)
+  const [isVideoLoading, setIsVideoLoading] = useState(false)
+  const [playingVideoId, setPlayingVideoId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     license_plate: '',
     vehicle_serial: '',
@@ -178,7 +208,8 @@ export default function VehiclesPage() {
 
   const handleOpenImagesDialog = (vehicle: Vehicle) => {
     setSelectedVehicleForImages(vehicle)
-    setNewImageUrl('')
+    setNewImageFile(null)
+    setNewImagePreview('')
     setIsImagesDialogOpen(true)
   }
 
@@ -194,6 +225,28 @@ export default function VehiclesPage() {
       }
     } catch (error) {
       console.error("Error setting primary image:", error)
+    }
+  }
+
+  const handleOpenVideosDialog = (vehicle: Vehicle) => {
+    setSelectedVehicleForVideos(vehicle)
+    setNewVideoUrl('')
+    setPlayingVideoId(null)
+    setIsVideosDialogOpen(true)
+  }
+
+  const handleSetPrimaryVideo = async (vid: any) => {
+    try {
+      await updateVehicleVideo(vid.id_vehicle_video, { is_primary: true })
+      
+      const siblingVideos = vehicleVideos.filter(i => i.id_vehicle === vid.id_vehicle && i.id_vehicle_video !== vid.id_vehicle_video)
+      for (const sibling of siblingVideos) {
+        if (sibling.is_primary) {
+          await updateVehicleVideo(sibling.id_vehicle_video, { is_primary: false })
+        }
+      }
+    } catch (error) {
+      console.error("Error setting primary video:", error)
     }
   }
 
@@ -220,11 +273,19 @@ export default function VehiclesPage() {
   return (
     <div className="min-h-screen">
       <Header 
-        title="Gestión de Vehículos" 
-        description="Administra el inventario de vehículos"
+        title="Inventario y Catálogo" 
+        description="Administra los vehículos, modelos y marcas"
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-6">
+        <Tabs defaultValue="vehicles" className="space-y-6">
+          <TabsList className="bg-muted p-1">
+            <TabsTrigger value="vehicles">Vehículos / Stock</TabsTrigger>
+            <TabsTrigger value="models">Modelos</TabsTrigger>
+            <TabsTrigger value="brands">Marcas</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="vehicles" className="space-y-6 mt-0">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-border/50">
@@ -399,6 +460,10 @@ export default function VehiclesPage() {
                                 <Image className="w-4 h-4 mr-2" />
                                 Gestionar imágenes
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleOpenVideosDialog(vehicle)}>
+                                <Video className="w-4 h-4 mr-2" />
+                                Gestionar videos
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleOpenDialog(vehicle)}>
                                 <Pencil className="w-4 h-4 mr-2" />
                                 Editar
@@ -429,7 +494,7 @@ export default function VehiclesPage() {
                         {/* Price section */}
                         <div className="pt-2.5 border-t border-border/40 flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Precio Venta</span>
-                          <span className="text-xl font-bold text-[#C9A961]">${vehicle.sale_price.toLocaleString()}</span>
+                          <span className="text-xl font-bold text-[#C9A961]">${formatPrice(vehicle.sale_price)}</span>
                         </div>
                       </CardContent>
                     </div>
@@ -448,11 +513,19 @@ export default function VehiclesPage() {
             </Card>
           </div>
         )}
+          </TabsContent>
+          <TabsContent value="models" className="mt-0">
+            <ModelsPage hideHeader={true} />
+          </TabsContent>
+          <TabsContent value="brands" className="mt-0">
+            <BrandsPage hideHeader={true} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}
@@ -649,7 +722,7 @@ export default function VehiclesPage() {
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalles del Vehículo</DialogTitle>
           </DialogHeader>
@@ -717,7 +790,7 @@ export default function VehiclesPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Precio de Venta</p>
-                    <p className="font-medium text-[#C9A961]">${viewingVehicle.sale_price.toLocaleString()}</p>
+                    <p className="font-medium text-[#C9A961]">${formatPrice(viewingVehicle.sale_price)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Serial Vehículo</p>
@@ -736,7 +809,7 @@ export default function VehiclesPage() {
 
       {/* Manage Images Dialog */}
       <Dialog open={isImagesDialogOpen} onOpenChange={setIsImagesDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gestionar Imágenes del Vehículo</DialogTitle>
             <DialogDescription>
@@ -752,18 +825,24 @@ export default function VehiclesPage() {
             <form 
               onSubmit={async (e) => {
                 e.preventDefault()
-                if (!newImageUrl.trim() || !selectedVehicleForImages) return
+                if (!newImageFile || !selectedVehicleForImages) return
                 setIsImageLoading(true)
                 try {
                   const siblingImages = vehicleImages.filter(img => img.id_vehicle === selectedVehicleForImages.id_vehicle)
                   const isPrimary = siblingImages.length === 0
                   await addVehicleImage({
                     id_vehicle: selectedVehicleForImages.id_vehicle,
-                    url: newImageUrl.trim(),
+                    image: newImageFile,
+                    url: '',
                     is_primary: isPrimary,
                     display_order: siblingImages.length
                   })
-                  setNewImageUrl('')
+                  setNewImageFile(null)
+                  setNewImagePreview('')
+                  if (typeof document !== 'undefined') {
+                    const fileInput = document.getElementById('new_image_file') as HTMLInputElement | null
+                    if (fileInput) fileInput.value = ''
+                  }
                 } catch (error) {
                   console.error("Error adding vehicle image:", error)
                 } finally {
@@ -773,14 +852,23 @@ export default function VehiclesPage() {
               className="flex gap-2 items-end"
             >
               <div className="flex-1 space-y-2">
-                <Label htmlFor="new_image_url">Nueva URL de Imagen</Label>
+                <Label htmlFor="new_image_file">Nueva Imagen</Label>
                 <Input
-                  id="new_image_url"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  id="new_image_file"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null
+                    setNewImageFile(file)
+                    setNewImagePreview(file ? URL.createObjectURL(file) : '')
+                  }}
                   required
                 />
+                {newImagePreview && (
+                  <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
+                    <img src={newImagePreview} alt="Vista previa" className="h-24 w-full object-cover" />
+                  </div>
+                )}
               </div>
               <Button 
                 type="submit" 
@@ -869,6 +957,175 @@ export default function VehiclesPage() {
           </div>
           <DialogFooter>
             <Button onClick={() => setIsImagesDialogOpen(false)} className="bg-muted hover:bg-muted/80 text-foreground border border-border">
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Manage Videos Dialog */}
+      <Dialog open={isVideosDialogOpen} onOpenChange={setIsVideosDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestionar Videos del Vehículo</DialogTitle>
+            <DialogDescription>
+              Añade, elimina o selecciona el video principal para el vehículo con placa{' '}
+              <span className="font-mono font-bold text-foreground">
+                {selectedVehicleForVideos?.license_plate}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Form to Add New Video URL */}
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!newVideoUrl.trim() || !selectedVehicleForVideos) return
+                setIsVideoLoading(true)
+                try {
+                  const siblingVideos = vehicleVideos.filter(v => v.id_vehicle === selectedVehicleForVideos.id_vehicle)
+                  const isPrimary = siblingVideos.length === 0
+                  await addVehicleVideo({
+                    id_vehicle: selectedVehicleForVideos.id_vehicle,
+                    url: newVideoUrl.trim(),
+                    is_primary: isPrimary,
+                    display_order: siblingVideos.length
+                  })
+                  setNewVideoUrl('')
+                } catch (error) {
+                  console.error("Error adding vehicle video:", error)
+                } finally {
+                  setIsVideoLoading(false)
+                }
+              }}
+              className="flex gap-2 items-end"
+            >
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="new_video_url">Nueva URL del Video</Label>
+                <Input
+                  id="new_video_url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={newVideoUrl}
+                  onChange={(e) => setNewVideoUrl(e.target.value)}
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                disabled={isVideoLoading} 
+                className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] font-medium"
+              >
+                {isVideoLoading ? 'Añadiendo...' : 'Añadir'}
+              </Button>
+            </form>
+
+            {/* List of Current Videos */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Videos actuales</h3>
+              {selectedVehicleForVideos && vehicleVideos.filter(v => v.id_vehicle === selectedVehicleForVideos.id_vehicle).length === 0 ? (
+                <div className="text-center py-8 rounded-xl border border-dashed border-border text-muted-foreground text-sm">
+                  Este vehículo aún no tiene videos asociados
+                </div>
+              ) : (
+                <div className="space-y-2.5 max-h-[40vh] overflow-y-auto pr-1">
+                  {selectedVehicleForVideos && 
+                    vehicleVideos
+                      .filter(v => v.id_vehicle === selectedVehicleForVideos.id_vehicle)
+                      .map((vid) => (
+                        <div 
+                          key={vid.id_vehicle_video} 
+                          className={`flex flex-col p-3 rounded-lg border bg-muted/20 transition-all duration-300 ${
+                            vid.is_primary 
+                              ? 'border-[#C9A961] bg-[#C9A961]/5 shadow-sm' 
+                              : 'border-border'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between min-w-0">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <button
+                                type="button"
+                                onClick={() => setPlayingVideoId(playingVideoId === vid.id_vehicle_video ? null : vid.id_vehicle_video)}
+                                className="w-10 h-10 rounded bg-[#C9A961]/10 hover:bg-[#C9A961]/20 flex items-center justify-center text-[#C9A961] flex-shrink-0 transition-colors"
+                                title="Previsualizar video"
+                              >
+                                <Play className="w-5 h-5 fill-current" />
+                              </button>
+                              <span className="text-xs font-mono truncate text-muted-foreground select-all block w-full">{vid.url}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 ml-4">
+                              {!vid.is_primary && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-muted-foreground/60 hover:text-[#C9A961] hover:bg-white/10"
+                                  onClick={() => handleSetPrimaryVideo(vid)}
+                                  title="Establecer como principal"
+                                >
+                                  <Star className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {vid.is_primary && (
+                                <span className="text-[10px] uppercase font-bold text-[#C9A961] bg-[#C9A961]/10 px-2 py-0.5 rounded">
+                                  Principal
+                                </span>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-white/10"
+                                onClick={async () => {
+                                  if (confirm('¿Estás seguro de eliminar este video?')) {
+                                    try {
+                                      await deleteVehicleVideo(vid.id_vehicle_video)
+                                      if (vid.is_primary) {
+                                        const remaining = vehicleVideos.filter(
+                                          v => v.id_vehicle === vid.id_vehicle && v.id_vehicle_video !== vid.id_vehicle_video
+                                        )
+                                        if (remaining.length > 0) {
+                                          await updateVehicleVideo(remaining[0].id_vehicle_video, { is_primary: true })
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error("Error deleting video:", error)
+                                    }
+                                  }
+                                }}
+                                title="Eliminar video"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {playingVideoId === vid.id_vehicle_video && (
+                            <div className="mt-3 aspect-video w-full rounded-lg overflow-hidden bg-black border border-border/50">
+                              {isYoutubeUrl(vid.url) ? (
+                                <iframe
+                                  src={getYoutubeEmbedUrl(vid.url)}
+                                  title="Vista previa del video"
+                                  className="w-full h-full max-w-full border-0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              ) : (
+                                <video
+                                  src={vid.url}
+                                  controls
+                                  autoPlay
+                                  className="w-full h-full max-w-full object-contain"
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsVideosDialogOpen(false)} className="bg-muted hover:bg-muted/80 text-foreground border border-border">
               Cerrar
             </Button>
           </DialogFooter>

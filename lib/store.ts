@@ -192,6 +192,26 @@ export interface VehicleImage {
   updated_at: string
 }
 
+export interface BrandImage {
+  id_brand_image: number
+  id_brand: number
+  url: string
+  is_primary: boolean
+  display_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface VehicleVideo {
+  id_vehicle_video: number
+  id_vehicle: number
+  url: string
+  is_primary: boolean
+  display_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Notification {
   id_notification: number
   title: string
@@ -202,7 +222,19 @@ export interface Notification {
 }
 
 // Mock data based on SQL file
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000/api'
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000/api'
+  }
+
+  return 'https://car-dealership-03qc.onrender.com/api'
+}
+
+const API_URL = getApiUrl()
 
 // Generic API caller with token auth
 const getAuthHeaders = () => {
@@ -218,9 +250,13 @@ const getAuthHeaders = () => {
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const headers = getAuthHeaders()
+  const isFormData = options.body instanceof FormData
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers: {
+    headers: isFormData ? {
+      ...(options.headers as Record<string, string> | undefined),
+      ...(headers.Authorization ? { Authorization: headers.Authorization } : {})
+    } : {
       ...headers,
       ...options.headers
     }
@@ -240,8 +276,10 @@ interface AuthState {
   user: User | null
   token: string | null
   isAuthenticated: boolean
+  sidebarCollapsed: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
+  setSidebarCollapsed: (collapsed: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -250,6 +288,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      sidebarCollapsed: false,
       login: async (email, password) => {
         try {
           const response = await fetch(`${API_URL}/auth/login`, {
@@ -292,6 +331,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
     }),
     { name: 'carliz-auth' }
   )
@@ -311,7 +351,10 @@ interface DataState {
   payments: Payment[]
   quotes: Quote[]
   vehicleImages: VehicleImage[]
+  brandImages: BrandImage[]
+  vehicleVideos: VehicleVideo[]
   notifications: Notification[]
+  installments: Installment[]
   
   fetchInitialData: () => Promise<void>
   fetchNotifications: () => Promise<void>
@@ -324,11 +367,11 @@ interface DataState {
   updateVehicle: (id: number, vehicle: Partial<Vehicle>) => Promise<void>
   deleteVehicle: (id: number) => Promise<void>
   
-  addCustomer: (customer: Omit<Customer, 'id_customer' | 'created_at' | 'updated_at'>) => Promise<void>
+  addCustomer: (customer: Omit<Customer, 'id_customer' | 'created_at' | 'updated_at'>) => Promise<Customer>
   updateCustomer: (id: number, customer: Partial<Customer>) => Promise<void>
   deleteCustomer: (id: number) => Promise<void>
   
-  addSale: (sale: Omit<VehicleSale, 'id_vehicle_sale' | 'created_at' | 'updated_at'>) => Promise<void>
+  addSale: (sale: Omit<VehicleSale, 'id_vehicle_sale' | 'created_at' | 'updated_at'>) => Promise<VehicleSale>
   updateSale: (id: number, sale: Partial<VehicleSale>) => Promise<void>
   
   addPayment: (payment: Omit<Payment, 'id_payment' | 'created_at' | 'updated_at'>) => Promise<void>
@@ -356,6 +399,14 @@ interface DataState {
   updateVehicleImage: (id: number, image: Partial<VehicleImage>) => Promise<void>
   deleteVehicleImage: (id: number) => Promise<void>
 
+  addBrandImage: (image: Omit<BrandImage, 'id_brand_image' | 'created_at' | 'updated_at'>) => Promise<void>
+  updateBrandImage: (id: number, image: Partial<BrandImage>) => Promise<void>
+  deleteBrandImage: (id: number) => Promise<void>
+
+  addVehicleVideo: (video: Omit<VehicleVideo, 'id_vehicle_video' | 'created_at' | 'updated_at'>) => Promise<void>
+  updateVehicleVideo: (id: number, video: Partial<VehicleVideo>) => Promise<void>
+  deleteVehicleVideo: (id: number) => Promise<void>
+
   addFinancingPlan: (plan: Omit<FinancingPlan, 'id_financing_plan' | 'created_at' | 'updated_at'>) => Promise<void>
   updateFinancingPlan: (id: number, plan: Partial<FinancingPlan>) => Promise<void>
   deleteFinancingPlan: (id: number) => Promise<void>
@@ -376,7 +427,10 @@ export const useDataStore = create<DataState>()(
       payments: [],
       quotes: [],
       vehicleImages: [],
+      brandImages: [],
+      vehicleVideos: [],
       notifications: [],
+      installments: [],
       
       fetchInitialData: async () => {
         const token = useAuthStore.getState().token
@@ -410,7 +464,10 @@ export const useDataStore = create<DataState>()(
             payments,
             quotes,
             vehicleImages,
-            notifications
+            brandImages,
+            vehicleVideos,
+            notifications,
+            installments
           ] = await Promise.all([
             apiFetch('/roles'),
             apiFetch('/users'),
@@ -424,7 +481,10 @@ export const useDataStore = create<DataState>()(
             apiFetch('/payments'),
             apiFetch('/quotes'),
             apiFetch('/vehicle-images'),
-            apiFetch('/notifications')
+            apiFetch('/brand-images'),
+            apiFetch('/vehicle-videos'),
+            apiFetch('/notifications'),
+            apiFetch('/installments')
           ])
 
           set({
@@ -440,7 +500,10 @@ export const useDataStore = create<DataState>()(
             payments,
             quotes,
             vehicleImages,
-            notifications
+            brandImages,
+            vehicleVideos,
+            notifications,
+            installments
           })
         } catch (error) {
           console.error("Error fetching initial data from backend:", error)
@@ -471,11 +534,12 @@ export const useDataStore = create<DataState>()(
       
       // Customer CRUD
       addCustomer: async (customer) => {
-        await apiRequest('/customers', {
+        const res = await apiRequest('/customers', {
           method: 'POST',
           body: JSON.stringify(customer)
         })
         await get().fetchInitialData()
+        return res.data
       },
       updateCustomer: async (id, customer) => {
         await apiRequest(`/customers/${id}`, {
@@ -493,11 +557,12 @@ export const useDataStore = create<DataState>()(
       
       // Sale CRUD
       addSale: async (sale) => {
-        await apiRequest('/vehicle-sale', {
+        const res = await apiRequest('/vehicle-sale', {
           method: 'POST',
           body: JSON.stringify(sale)
         })
         await get().fetchInitialData()
+        return res.data
       },
       updateSale: async (id, sale) => {
         await apiRequest(`/vehicle-sale/${id}`, {
@@ -622,21 +687,97 @@ export const useDataStore = create<DataState>()(
       
       // VehicleImage CRUD
       addVehicleImage: async (image) => {
+        const formData = new FormData()
+        if (image.image instanceof File) {
+          formData.append('image', image.image)
+        }
+        Object.entries(image).forEach(([key, value]) => {
+          if (key === 'image' || value === undefined || value === null) return
+          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+        })
         await apiRequest('/vehicle-images', {
           method: 'POST',
-          body: JSON.stringify(image)
+          body: formData
         })
         await get().fetchInitialData()
       },
       updateVehicleImage: async (id, image) => {
+        const formData = new FormData()
+        if (image.image instanceof File) {
+          formData.append('image', image.image)
+        }
+        Object.entries(image).forEach(([key, value]) => {
+          if (key === 'image' || value === undefined || value === null) return
+          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+        })
         await apiRequest(`/vehicle-images/${id}`, {
           method: 'PUT',
-          body: JSON.stringify(image)
+          body: formData
         })
         await get().fetchInitialData()
       },
       deleteVehicleImage: async (id) => {
         await apiRequest(`/vehicle-images/${id}`, {
+          method: 'DELETE'
+        })
+        await get().fetchInitialData()
+      },
+
+      // BrandImage CRUD
+      addBrandImage: async (image) => {
+        const formData = new FormData()
+        if (image.image instanceof File) {
+          formData.append('image', image.image)
+        }
+        Object.entries(image).forEach(([key, value]) => {
+          if (key === 'image' || value === undefined || value === null) return
+          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+        })
+        await apiRequest('/brand-images', {
+          method: 'POST',
+          body: formData
+        })
+        await get().fetchInitialData()
+      },
+      updateBrandImage: async (id, image) => {
+        const formData = new FormData()
+        if (image.image instanceof File) {
+          formData.append('image', image.image)
+        }
+        Object.entries(image).forEach(([key, value]) => {
+          if (key === 'image' || value === undefined || value === null) return
+          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+        })
+        await apiRequest(`/brand-images/${id}`, {
+          method: 'PUT',
+          body: formData
+        })
+        await get().fetchInitialData()
+      },
+      deleteBrandImage: async (id) => {
+        await apiRequest(`/brand-images/${id}`, {
+          method: 'DELETE'
+        })
+        await get().fetchInitialData()
+      },
+
+      // VehicleVideo CRUD
+      addVehicleVideo: async (video) => {
+        await apiRequest('/vehicle-videos', {
+          method: 'POST',
+          body: JSON.stringify(video)
+        })
+        await get().fetchInitialData()
+      },
+      updateVehicleVideo: async (id, video) => {
+        await apiRequest(`/vehicle-videos/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(video)
+        })
+        await get().fetchInitialData()
+      },
+      deleteVehicleVideo: async (id) => {
+        await apiRequest(`/vehicle-videos/${id}`, {
           method: 'DELETE'
         })
         await get().fetchInitialData()

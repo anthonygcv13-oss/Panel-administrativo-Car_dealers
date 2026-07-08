@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Search, Pencil, Trash2, MoreHorizontal, Tag, Globe } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, MoreHorizontal, Tag, Globe, Image, Star } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,8 +31,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPagination } from '@/components/admin/pagination'
 
-export default function BrandsPage() {
-  const { brands, addBrand, updateBrand, deleteBrand } = useDataStore()
+export default function BrandsPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+  const { brands, brandImages, addBrand, updateBrand, deleteBrand, addBrandImage, updateBrandImage, deleteBrandImage } = useDataStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null)
@@ -43,6 +43,71 @@ export default function BrandsPage() {
     website: '',
     status: 'active' as GeneralStatus,
   })
+
+  // Brand Images State
+  const [isImagesDialogOpen, setIsImagesDialogOpen] = useState(false)
+  const [selectedBrandForImages, setSelectedBrandForImages] = useState<Brand | null>(null)
+  const [newImageFile, setNewImageFile] = useState<File | null>(null)
+  const [newImagePreview, setNewImagePreview] = useState('')
+  const [isImageLoading, setIsImageLoading] = useState(false)
+
+  const handleOpenImagesDialog = (brand: Brand) => {
+    setSelectedBrandForImages(brand)
+    setNewImageFile(null)
+    setNewImagePreview('')
+    setIsImagesDialogOpen(true)
+  }
+
+  const handleSetPrimaryImage = async (img: any) => {
+    try {
+      await updateBrandImage(img.id_brand_image, { is_primary: true })
+      const siblingImages = brandImages.filter(i => i.id_brand === img.id_brand && i.id_brand_image !== img.id_brand_image)
+      for (const sibling of siblingImages) {
+        if (sibling.is_primary) {
+          await updateBrandImage(sibling.id_brand_image, { is_primary: false })
+        }
+      }
+    } catch (error) {
+      console.error("Error setting primary brand image:", error)
+    }
+  }
+
+  const handleAddImage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedBrandForImages || !newImageFile) return
+    setIsImageLoading(true)
+    try {
+      const isFirst = brandImages.filter(i => i.id_brand === selectedBrandForImages.id_brand).length === 0
+      await addBrandImage({
+        id_brand: selectedBrandForImages.id_brand,
+        image: newImageFile,
+        url: '',
+        is_primary: isFirst,
+        display_order: 0
+      })
+      setNewImageFile(null)
+      setNewImagePreview('')
+      if (typeof document !== 'undefined') {
+        const fileInput = document.getElementById('brand_image_file') as HTMLInputElement | null
+        if (fileInput) fileInput.value = ''
+      }
+    } catch (error) {
+      console.error("Error adding brand image:", error)
+      alert("Error al agregar la imagen")
+    } finally {
+      setIsImageLoading(false)
+    }
+  }
+
+  const handleDeleteImage = async (id: number) => {
+    if (!confirm("¿Seguro que deseas eliminar esta imagen?")) return
+    try {
+      await deleteBrandImage(id)
+    } catch (error) {
+      console.error("Error deleting brand image:", error)
+      alert("Error al eliminar la imagen")
+    }
+  }
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -115,13 +180,15 @@ export default function BrandsPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        title="Gestión de Marcas" 
-        description="Administra las marcas de vehículos"
-      />
+    <div className={hideHeader ? "" : "min-h-screen"}>
+      {!hideHeader && (
+        <Header 
+          title="Gestión de Marcas" 
+          description="Administra las marcas de vehículos"
+        />
+      )}
       
-      <div className="p-6 space-y-6">
+      <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Search and Actions */}
         <Card className="border-border/50">
           <CardContent className="p-4">
@@ -158,61 +225,88 @@ export default function BrandsPage() {
               {paginatedBrands.map((brand) => (
                 <Card 
                   key={brand.id_brand} 
-                  className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between"
+                  className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between overflow-hidden"
                 >
-                  <CardContent className="p-6 space-y-4">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-[#C9A961]/10 dark:bg-[#C9A961]/20 flex items-center justify-center border border-[#C9A961]/20 group-hover:scale-105 transition-transform">
-                          <Tag className="w-6 h-6 text-[#C9A961]" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors">
-                            {brand.name}
-                          </h3>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground font-medium">{brand.country_origin}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(brand.status)}
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem onClick={() => handleOpenDialog(brand)}>
-                              <Pencil className="w-4 h-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(brand.id_brand)}
-                              className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                  {/* Top Image Banner */}
+                  <div className="relative w-full h-36 bg-muted/20 dark:bg-muted/10 flex items-center justify-center border-b border-border/50 overflow-hidden">
+                    {/* Status Badge - Top Left */}
+                    <div className="absolute top-3 left-3 z-10 backdrop-blur-md bg-white/70 dark:bg-black/50 rounded-full shadow-sm">
+                      {getStatusBadge(brand.status)}
                     </div>
 
-                    {/* Description */}
-                    {brand.description && (
-                      <p className="text-sm text-muted-foreground/90 line-clamp-2 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/20">
-                        {brand.description}
-                      </p>
-                    )}
+                    {/* Action Menu - Top Right */}
+                    <div className="absolute top-3 right-3 z-10">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/70 dark:bg-black/50 hover:bg-white dark:hover:bg-black backdrop-blur-md shadow-sm border border-border/20">
+                            <MoreHorizontal className="w-4 h-4 text-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem onClick={() => handleOpenDialog(brand)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenImagesDialog(brand)}>
+                            <Image className="w-4 h-4 mr-2" />
+                            Imágenes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(brand.id_brand)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Image / Logo */}
+                    {(() => {
+                      const primaryImg = brandImages.find(img => img.id_brand === brand.id_brand && img.is_primary)
+                      if (primaryImg) {
+                        return (
+                          <div className="w-full h-full p-4 flex items-center justify-center bg-white dark:bg-[#16161a]">
+                            <img 
+                              src={primaryImg.url} 
+                              alt={brand.name} 
+                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" 
+                            />
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="w-full h-full bg-gradient-to-br from-[#C9A961]/10 to-[#C9A961]/2 dark:from-[#C9A961]/20 dark:to-transparent flex items-center justify-center">
+                          <Tag className="w-8 h-8 text-[#C9A961]/40" />
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                  <CardContent className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors line-clamp-1">
+                          {brand.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground font-medium">{brand.country_origin}</span>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      {brand.description && (
+                        <p className="text-sm text-muted-foreground/90 line-clamp-2 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/20">
+                          {brand.description}
+                        </p>
+                      )}
+                    </div>
 
                     {/* Website */}
                     {brand.website && (
-                      <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+                      <div className="pt-3 border-t border-border/40 flex items-center justify-between mt-auto">
                         <span className="text-xs text-muted-foreground">Sitio web</span>
                         <a 
                           href={brand.website.startsWith('http') ? brand.website : `https://${brand.website}`} 
@@ -314,6 +408,90 @@ export default function BrandsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      {/* Brand Images Dialog */}
+      <Dialog open={isImagesDialogOpen} onOpenChange={setIsImagesDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Galería de la Marca: {selectedBrandForImages?.name}</DialogTitle>
+            <DialogDescription>
+              Agrega o administra las imágenes asociadas a esta marca.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddImage} className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <div className="space-y-1.5 flex-1">
+                <Label htmlFor="brand_image_file">Nueva Imagen</Label>
+                <Input
+                  id="brand_image_file"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null
+                    setNewImageFile(file)
+                    setNewImagePreview(file ? URL.createObjectURL(file) : '')
+                  }}
+                  required
+                />
+                {newImagePreview && (
+                  <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
+                    <img src={newImagePreview} alt="Vista previa" className="h-24 w-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="mt-7 bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] font-semibold"
+                disabled={isImageLoading}
+              >
+                {isImageLoading ? 'Añadiendo...' : 'Añadir'}
+              </Button>
+            </div>
+          </form>
+
+          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+            <Label>Imágenes Registradas</Label>
+            {selectedBrandForImages && 
+              brandImages.filter(img => img.id_brand === selectedBrandForImages.id_brand).map((img) => (
+                <div key={img.id_brand_image} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/40 bg-muted/20">
+                  <div className="w-12 h-12 rounded border border-border bg-white dark:bg-zinc-950 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <img src={img.url} alt="Logo de Marca" className="max-w-full max-h-full object-contain" onError={(e)=>{(e.target as any).src='https://placehold.co/100x100?text=Logo'}} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground truncate">{img.url}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleSetPrimaryImage(img)}
+                      className={`h-8 w-8 rounded-full ${img.is_primary ? 'text-[#C9A961]' : 'text-muted-foreground/40 hover:text-[#C9A961]'}`}
+                    >
+                      <Star className="w-4 h-4 fill-current" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDeleteImage(img.id_brand_image)}
+                      className="h-8 w-8 rounded-full text-red-500 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            {selectedBrandForImages && brandImages.filter(img => img.id_brand === selectedBrandForImages.id_brand).length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-6">No hay imágenes registradas para esta marca.</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsImagesDialogOpen(false)} className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] font-semibold">
+              Cerrar Galería
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

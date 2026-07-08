@@ -3,6 +3,8 @@
 import { Header } from '@/components/admin/header'
 import { useAuthStore, useDataStore } from '@/lib/store'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import UsersPage from '@/app/dashboard/users/page'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,11 +63,18 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen">
       <Header 
-        title="Configuración" 
-        description="Administra tu cuenta y preferencias del sistema"
+        title="Configuración del Sistema" 
+        description="Administra los ajustes de tu cuenta, preferencias y usuarios"
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-6">
+        <Tabs defaultValue="settings" className="space-y-6">
+          <TabsList className="bg-muted p-1">
+            <TabsTrigger value="settings">Ajustes Generales</TabsTrigger>
+            <TabsTrigger value="users">Usuarios y Accesos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="settings" className="space-y-6 mt-0">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sidebar */}
           <div className="space-y-4">
@@ -358,6 +367,11 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+          </TabsContent>
+          <TabsContent value="users" className="mt-0">
+            <UsersPage hideHeader={true} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

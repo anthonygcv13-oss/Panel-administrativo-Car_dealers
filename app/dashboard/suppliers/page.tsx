@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPagination } from '@/components/admin/pagination'
 
-export default function SuppliersPage() {
+export default function SuppliersPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useDataStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -128,13 +128,15 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        title="Gestión de Proveedores" 
-        description="Administra los proveedores de vehículos"
-      />
+    <div className={hideHeader ? "" : "min-h-screen"}>
+      {!hideHeader && (
+        <Header 
+          title="Gestión de Proveedores" 
+          description="Administra los proveedores de vehículos"
+        />
+      )}
       
-      <div className="p-6 space-y-6">
+      <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Search and Actions */}
         <Card className="border-border/50">
           <CardContent className="p-4">
@@ -264,7 +266,7 @@ export default function SuppliersPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}

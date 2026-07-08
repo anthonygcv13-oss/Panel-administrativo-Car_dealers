@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPagination } from '@/components/admin/pagination'
 
-export default function UsersPage() {
+export default function UsersPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { users, roles, addUser, updateUser, deleteUser } = useDataStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -141,13 +141,15 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        title="Gestión de Usuarios" 
-        description="Administra los usuarios del sistema"
-      />
+    <div className={hideHeader ? "" : "min-h-screen"}>
+      {!hideHeader && (
+        <Header 
+          title="Gestión de Usuarios" 
+          description="Administra los usuarios del sistema"
+        />
+      )}
       
-      <div className="p-6 space-y-6">
+      <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-border/50">
@@ -286,19 +288,21 @@ export default function UsersPage() {
                     </div>
 
                     {/* Footer */}
-                    <div className="pt-2.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground/80">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>Registrado:</span>
+                    {user.created_at && (
+                      <div className="pt-2.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground/80">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>Registrado:</span>
+                        </div>
+                        <span className="font-medium text-foreground">
+                          {new Date(user.created_at).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
                       </div>
-                      <span className="font-medium text-foreground">
-                        {new Date(user.created_at).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

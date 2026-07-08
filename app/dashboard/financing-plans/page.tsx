@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPagination } from '@/components/admin/pagination'
 
-export default function FinancingPlansPage() {
+export default function FinancingPlansPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { financingPlans, addFinancingPlan, updateFinancingPlan, deleteFinancingPlan } = useDataStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -110,13 +110,15 @@ export default function FinancingPlansPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        title="Planes de Financiamiento" 
-        description="Administra los planes y opciones de crédito para los clientes"
-      />
+    <div className={hideHeader ? "" : "min-h-screen"}>
+      {!hideHeader && (
+        <Header 
+          title="Planes de Financiamiento" 
+          description="Administra los planes y opciones de crédito para los clientes"
+        />
+      )}
       
-      <div className="p-6 space-y-6">
+      <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-border/50">
