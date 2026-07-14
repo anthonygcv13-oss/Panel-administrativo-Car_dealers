@@ -49,12 +49,16 @@ export default function BrandsPage({ hideHeader = false }: { hideHeader?: boolea
   const [selectedBrandForImages, setSelectedBrandForImages] = useState<Brand | null>(null)
   const [newImageFile, setNewImageFile] = useState<File | null>(null)
   const [newImagePreview, setNewImagePreview] = useState('')
+  const [imageUploadType, setImageUploadType] = useState<'file' | 'url'>('file')
+  const [newImageUrl, setNewImageUrl] = useState('')
   const [isImageLoading, setIsImageLoading] = useState(false)
 
   const handleOpenImagesDialog = (brand: Brand) => {
     setSelectedBrandForImages(brand)
     setNewImageFile(null)
     setNewImagePreview('')
+    setImageUploadType('file')
+    setNewImageUrl('')
     setIsImagesDialogOpen(true)
   }
 
@@ -74,19 +78,23 @@ export default function BrandsPage({ hideHeader = false }: { hideHeader?: boolea
 
   const handleAddImage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedBrandForImages || !newImageFile) return
+    if (!selectedBrandForImages) return
+    if (imageUploadType === 'file' && !newImageFile) return
+    if (imageUploadType === 'url' && !newImageUrl.trim()) return
+
     setIsImageLoading(true)
     try {
       const isFirst = brandImages.filter(i => i.id_brand === selectedBrandForImages.id_brand).length === 0
       await addBrandImage({
         id_brand: selectedBrandForImages.id_brand,
-        image: newImageFile,
-        url: '',
+        image: imageUploadType === 'file' ? newImageFile : null,
+        url: imageUploadType === 'url' ? newImageUrl.trim() : '',
         is_primary: isFirst,
         display_order: 0
       })
       setNewImageFile(null)
       setNewImagePreview('')
+      setNewImageUrl('')
       if (typeof document !== 'undefined') {
         const fileInput = document.getElementById('brand_image_file') as HTMLInputElement | null
         if (fileInput) fileInput.value = ''
@@ -421,29 +429,88 @@ export default function BrandsPage({ hideHeader = false }: { hideHeader?: boolea
           </DialogHeader>
 
           <form onSubmit={handleAddImage} className="space-y-4 py-4">
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-end">
               <div className="space-y-1.5 flex-1">
-                <Label htmlFor="brand_image_file">Nueva Imagen</Label>
-                <Input
-                  id="brand_image_file"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null
-                    setNewImageFile(file)
-                    setNewImagePreview(file ? URL.createObjectURL(file) : '')
-                  }}
-                  required
-                />
-                {newImagePreview && (
-                  <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
-                    <img src={newImagePreview} alt="Vista previa" className="h-24 w-full object-cover" />
+                <div className="flex justify-between items-center mb-1">
+                  <Label htmlFor={imageUploadType === 'file' ? 'brand_image_file' : 'brand_image_url'}>
+                    Nueva Imagen
+                  </Label>
+                  <div className="flex gap-1 bg-muted p-0.5 rounded-md border border-border/40">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageUploadType('file')
+                        setNewImageUrl('')
+                      }}
+                      className={`px-2 py-0.5 text-xs rounded transition-all duration-200 ${
+                        imageUploadType === 'file'
+                          ? 'bg-[#C9A961] text-[#2D2D2D] font-semibold shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Archivo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageUploadType('url')
+                        setNewImageFile(null)
+                        setNewImagePreview('')
+                        if (typeof document !== 'undefined') {
+                          const fileInput = document.getElementById('brand_image_file') as HTMLInputElement | null
+                          if (fileInput) fileInput.value = ''
+                        }
+                      }}
+                      className={`px-2 py-0.5 text-xs rounded transition-all duration-200 ${
+                        imageUploadType === 'url'
+                          ? 'bg-[#C9A961] text-[#2D2D2D] font-semibold shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Enlace URL
+                    </button>
+                  </div>
+                </div>
+
+                {imageUploadType === 'file' ? (
+                  <Input
+                    id="brand_image_file"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      setNewImageFile(file)
+                      setNewImagePreview(file ? URL.createObjectURL(file) : '')
+                    }}
+                    required
+                  />
+                ) : (
+                  <Input
+                    id="brand_image_url"
+                    type="url"
+                    placeholder="Pegar la URL de la imagen aquí..."
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    required
+                  />
+                )}
+
+                {(imageUploadType === 'file' ? newImagePreview : newImageUrl) && (
+                  <div className="rounded-lg border border-border overflow-hidden bg-muted/20 mt-2">
+                    <img 
+                      src={imageUploadType === 'file' ? newImagePreview : newImageUrl} 
+                      alt="Vista previa" 
+                      className="h-24 w-full object-cover" 
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                 )}
               </div>
               <Button 
                 type="submit" 
-                className="mt-7 bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] font-semibold"
+                className="bg-[#C9A961] hover:bg-[#D4B978] text-[#2D2D2D] font-semibold"
                 disabled={isImageLoading}
               >
                 {isImageLoading ? 'Añadiendo...' : 'Añadir'}

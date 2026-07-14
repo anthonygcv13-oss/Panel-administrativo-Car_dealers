@@ -93,6 +93,8 @@ export default function VehiclesPage() {
   const [selectedVehicleForVideos, setSelectedVehicleForVideos] = useState<Vehicle | null>(null)
   const [newImageFile, setNewImageFile] = useState<File | null>(null)
   const [newImagePreview, setNewImagePreview] = useState('')
+  const [imageUploadType, setImageUploadType] = useState<'file' | 'url'>('file')
+  const [newImageUrl, setNewImageUrl] = useState('')
   const [newVideoUrl, setNewVideoUrl] = useState('')
   const [isImageLoading, setIsImageLoading] = useState(false)
   const [isVideoLoading, setIsVideoLoading] = useState(false)
@@ -210,6 +212,8 @@ export default function VehiclesPage() {
     setSelectedVehicleForImages(vehicle)
     setNewImageFile(null)
     setNewImagePreview('')
+    setImageUploadType('file')
+    setNewImageUrl('')
     setIsImagesDialogOpen(true)
   }
 
@@ -821,24 +825,28 @@ export default function VehiclesPage() {
           </DialogHeader>
           
           <div className="space-y-6 py-4">
-            {/* Form to Add New Image URL */}
+            {/* Form to Add New Image (File or URL) */}
             <form 
               onSubmit={async (e) => {
                 e.preventDefault()
-                if (!newImageFile || !selectedVehicleForImages) return
+                if (!selectedVehicleForImages) return
+                if (imageUploadType === 'file' && !newImageFile) return
+                if (imageUploadType === 'url' && !newImageUrl.trim()) return
+
                 setIsImageLoading(true)
                 try {
                   const siblingImages = vehicleImages.filter(img => img.id_vehicle === selectedVehicleForImages.id_vehicle)
                   const isPrimary = siblingImages.length === 0
                   await addVehicleImage({
                     id_vehicle: selectedVehicleForImages.id_vehicle,
-                    image: newImageFile,
-                    url: '',
+                    image: imageUploadType === 'file' ? newImageFile : null,
+                    url: imageUploadType === 'url' ? newImageUrl.trim() : '',
                     is_primary: isPrimary,
                     display_order: siblingImages.length
                   })
                   setNewImageFile(null)
                   setNewImagePreview('')
+                  setNewImageUrl('')
                   if (typeof document !== 'undefined') {
                     const fileInput = document.getElementById('new_image_file') as HTMLInputElement | null
                     if (fileInput) fileInput.value = ''
@@ -852,21 +860,80 @@ export default function VehiclesPage() {
               className="flex gap-2 items-end"
             >
               <div className="flex-1 space-y-2">
-                <Label htmlFor="new_image_file">Nueva Imagen</Label>
-                <Input
-                  id="new_image_file"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null
-                    setNewImageFile(file)
-                    setNewImagePreview(file ? URL.createObjectURL(file) : '')
-                  }}
-                  required
-                />
-                {newImagePreview && (
-                  <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
-                    <img src={newImagePreview} alt="Vista previa" className="h-24 w-full object-cover" />
+                <div className="flex justify-between items-center">
+                  <Label htmlFor={imageUploadType === 'file' ? 'new_image_file' : 'new_image_url'}>
+                    Nueva Imagen
+                  </Label>
+                  <div className="flex gap-1 bg-muted p-0.5 rounded-md border border-border/40">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageUploadType('file')
+                        setNewImageUrl('')
+                      }}
+                      className={`px-2 py-0.5 text-xs rounded transition-all duration-200 ${
+                        imageUploadType === 'file'
+                          ? 'bg-[#C9A961] text-[#2D2D2D] font-semibold shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Archivo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageUploadType('url')
+                        setNewImageFile(null)
+                        setNewImagePreview('')
+                        if (typeof document !== 'undefined') {
+                          const fileInput = document.getElementById('new_image_file') as HTMLInputElement | null
+                          if (fileInput) fileInput.value = ''
+                        }
+                      }}
+                      className={`px-2 py-0.5 text-xs rounded transition-all duration-200 ${
+                        imageUploadType === 'url'
+                          ? 'bg-[#C9A961] text-[#2D2D2D] font-semibold shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Enlace URL
+                    </button>
+                  </div>
+                </div>
+
+                {imageUploadType === 'file' ? (
+                  <Input
+                    id="new_image_file"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      setNewImageFile(file)
+                      setNewImagePreview(file ? URL.createObjectURL(file) : '')
+                    }}
+                    required
+                  />
+                ) : (
+                  <Input
+                    id="new_image_url"
+                    type="url"
+                    placeholder="Pegar la URL de la imagen aquí..."
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    required
+                  />
+                )}
+
+                {(imageUploadType === 'file' ? newImagePreview : newImageUrl) && (
+                  <div className="rounded-lg border border-border overflow-hidden bg-muted/20 mt-2">
+                    <img 
+                      src={imageUploadType === 'file' ? newImagePreview : newImageUrl} 
+                      alt="Vista previa" 
+                      className="h-24 w-full object-cover" 
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                 )}
               </div>

@@ -262,11 +262,15 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     }
   })
   if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    const errorMessage = errorData.error || errorData.message || `HTTP error ${response.status}`
     if (response.status === 401) {
       useAuthStore.getState().logout()
+      const authError = new Error(errorMessage)
+      authError.name = 'UnauthorizedError'
+      throw authError
     }
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.error || errorData.message || `HTTP error ${response.status}`)
+    throw new Error(errorMessage)
   }
   return await response.json()
 }
@@ -442,6 +446,9 @@ export const useDataStore = create<DataState>()(
               const res = await apiRequest(endpoint)
               return res.success ? res.data : []
             } catch (error) {
+              if (error instanceof Error && error.name === 'UnauthorizedError') {
+                return []
+              }
               if (error instanceof TypeError || (error instanceof Error && error.message.toLowerCase().includes('fetch'))) {
                 console.warn(`Unable to fetch endpoint ${endpoint} (backend offline or network error)`)
               } else {
@@ -814,6 +821,9 @@ export const useDataStore = create<DataState>()(
             set({ notifications: res.data })
           }
         } catch (error) {
+          if (error instanceof Error && error.name === 'UnauthorizedError') {
+            return
+          }
           if (error instanceof TypeError || (error instanceof Error && error.message.toLowerCase().includes('fetch'))) {
             console.warn("Unable to fetch notifications (backend offline or network error)")
           } else {
