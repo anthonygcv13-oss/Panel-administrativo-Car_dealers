@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bell, Search, User, Settings, LogOut, Sun, Moon } from 'lucide-react'
+import { Bell, Search, User, Settings, LogOut, Sun, Moon, Menu } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { NotificationsMenu } from './notifications-menu'
@@ -22,7 +22,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, description }: HeaderProps) {
-  const { user, logout } = useAuthStore()
+  const { user, logout, sidebarCollapsed, setSidebarCollapsed } = useAuthStore()
   const router = useRouter()
   const [isDark, setIsDark] = useState(false)
 
@@ -48,14 +48,25 @@ export function Header({ title, description }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 bg-gradient-to-r from-cream-light via-silver-light to-cream-light dark:from-[#0C0C0E] dark:via-[#121215] dark:to-[#0C0C0E] backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-[#0C0C0E]/60 border-b border-luxe-gold/20 dark:border-luxe-gold/10 shadow-sm print:hidden">
-      <div className="flex items-center justify-between h-16 px-8">
+      <div className="flex items-center justify-between h-16 px-4 md:px-8">
+        {/* Mobile menu trigger */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden mr-2 hover:bg-luxe-gold/5 flex-shrink-0"
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          aria-label="Toggle menu"
+        >
+          <Menu className="w-6 h-6 text-luxe-gold" />
+        </Button>
+
         {/* Title section */}
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-luxe-gold to-midnight-blue dark:to-[#F5F5F7]" style={{ fontFamily: 'var(--font-playfair)' }}>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-luxe-gold to-midnight-blue dark:to-[#F5F5F7] truncate" style={{ fontFamily: 'var(--font-playfair)' }}>
             {title}
           </h1>
           {description && (
-            <p className="text-sm text-stainless-silver mt-1">{description}</p>
+            <p className="text-xs md:text-sm text-stainless-silver mt-1 truncate">{description}</p>
           )}
         </div>
 

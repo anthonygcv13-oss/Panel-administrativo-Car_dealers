@@ -14,7 +14,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const { isAuthenticated, isHydrated, sidebarCollapsed, token } = useAuthStore()
+  const { isAuthenticated, isHydrated, sidebarCollapsed, token, setSidebarCollapsed } = useAuthStore()
   const { fetchInitialData, addLocalNotification } = useDataStore()
 
   useEffect(() => {
@@ -66,7 +66,13 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white dark:from-[#09090B] dark:via-[#0C0C0E] dark:to-[#09090B] text-foreground transition-colors duration-300 print:bg-white">
       <Sidebar />
-      <main className={`${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300 print:ml-0 print:p-0`}>
+      {!sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity duration-300"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+      <main className={`transition-all duration-300 print:ml-0 print:p-0 min-h-screen ${sidebarCollapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-72'}`}>
         {children}
       </main>
       <Toaster />

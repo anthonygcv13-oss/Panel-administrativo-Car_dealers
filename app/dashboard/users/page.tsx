@@ -127,6 +127,7 @@ export default function UsersPage({ hideHeader = false }: { hideHeader?: boolean
     const role = roles.find(r => r.id_role === roleId)
     const colors: Record<string, string> = {
       admin: 'bg-[#C9A961]/15 text-[#C9A961] dark:bg-[#C9A961]/25 dark:text-[#E8D08D] border border-[#C9A961]/20',
+      administrador: 'bg-[#C9A961]/15 text-[#C9A961] dark:bg-[#C9A961]/25 dark:text-[#E8D08D] border border-[#C9A961]/20',
       gerente: 'bg-[#1A1F3D]/10 text-[#1A1F3D] dark:bg-slate-800 dark:text-slate-200 border border-slate-700/10 dark:border-slate-700/50',
       vendedor: 'bg-blue-50 text-blue-700 dark:bg-blue-900/15 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30',
       cajero: 'bg-purple-50 text-purple-700 dark:bg-purple-900/15 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30',
@@ -151,48 +152,48 @@ export default function UsersPage({ hideHeader = false }: { hideHeader?: boolean
       
       <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#C9A961]/20 flex items-center justify-center">
-                <UserCog className="w-6 h-6 text-[#C9A961]" />
+            <CardContent className="p-3 md:p-4 flex items-center gap-2.5 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#C9A961]/20 flex items-center justify-center flex-shrink-0">
+                <UserCog className="w-5 h-5 md:w-6 md:h-6 text-[#C9A961]" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Usuarios</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Total Usuarios</p>
+                <p className="text-xl md:text-2xl font-bold">{users.length}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-950/20">
-                <UserCog className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <CardContent className="p-3 md:p-4 flex items-center gap-2.5 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-950/20 flex-shrink-0">
+                <UserCog className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Activos</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.status === 'active').length}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center dark:bg-zinc-800">
-                <UserCog className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Inactivos</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.status === 'inactive').length}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Activos</p>
+                <p className="text-xl md:text-2xl font-bold">{users.filter(u => u.status === 'active').length}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#8B1538]/20 flex items-center justify-center border border-[#8B1538]/10">
-                <Shield className="w-6 h-6 text-[#8B1538] dark:text-[#C9A961]" />
+            <CardContent className="p-3 md:p-4 flex items-center gap-2.5 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gray-100 flex items-center justify-center dark:bg-zinc-800 flex-shrink-0">
+                <UserCog className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-400" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Administradores</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.id_role === 1).length}</p>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Inactivos</p>
+                <p className="text-xl md:text-2xl font-bold">{users.filter(u => u.status === 'inactive').length}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-3 md:p-4 flex items-center gap-2.5 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#8B1538]/20 flex items-center justify-center border border-[#8B1538]/10 flex-shrink-0">
+                <Shield className="w-5 h-5 md:w-6 md:h-6 text-[#8B1538] dark:text-[#C9A961]" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Admins</p>
+                <p className="text-xl md:text-2xl font-bold">{users.filter(u => u.id_role === 1).length}</p>
               </div>
             </CardContent>
           </Card>
@@ -241,7 +242,7 @@ export default function UsersPage({ hideHeader = false }: { hideHeader?: boolean
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-[#C9A961]/15 dark:bg-[#C9A961]/25 flex items-center justify-center border border-[#C9A961]/20 font-semibold text-[#C9A961] text-lg uppercase">
-                          {user.first_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          {(user.first_name || '').split(' ').map(n => n[0] || '').join('').slice(0, 2)}
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg text-foreground group-hover:text-[#C9A961] transition-colors">
@@ -318,6 +319,50 @@ export default function UsersPage({ hideHeader = false }: { hideHeader?: boolean
             </Card>
           </div>
         )}
+
+        {/* Roles y Accesos Section */}
+        <div className="pt-6 border-t border-border/40">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-5 h-5 text-[#C9A961]" />
+            <h2 className="text-xl font-bold text-foreground">Roles y Accesos del Sistema</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {roles.map((role) => {
+              const userCount = users.filter(u => u.id_role === role.id_role).length;
+              return (
+                <Card 
+                  key={role.id_role}
+                  className="bg-white/80 dark:bg-[#121215]/80 border border-border/50 hover:border-[#C9A961]/50 transition-all duration-300 group flex flex-col justify-between"
+                >
+                  <CardContent className="p-6 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-lg bg-[#C9A961]/15 dark:bg-[#C9A961]/25 flex items-center justify-center border border-[#C9A961]/20">
+                          <UserCog className="w-5 h-5 text-[#C9A961]" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-base text-foreground capitalize group-hover:text-[#C9A961] transition-colors">
+                            {role.name}
+                          </h3>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                            ID: {role.id_role}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-muted text-muted-foreground border border-border">
+                        {userCount} {userCount === 1 ? 'usuario' : 'usuarios'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {role.description || 'Sin descripción'}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Create/Edit Dialog */}

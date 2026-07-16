@@ -83,7 +83,7 @@ export default function SettingsPage() {
                 <div className="flex flex-col items-center text-center">
                   <div className="w-20 h-20 rounded-full bg-[#C9A961]/20 flex items-center justify-center mb-4">
                     <span className="text-2xl font-bold text-[#C9A961]">
-                      {user?.first_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      {(user?.first_name || '').split(' ').map(n => n[0] || '').join('').slice(0, 2)}
                     </span>
                   </div>
                   <h3 className="font-semibold text-lg">{user?.first_name}</h3>
