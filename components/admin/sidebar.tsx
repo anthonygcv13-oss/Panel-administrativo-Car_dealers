@@ -45,7 +45,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 z-40 h-screen bg-gradient-to-b from-silver-light via-cream-light to-pure-white dark:from-[#121215] dark:via-[#09090B] dark:to-[#0C0C0E] border-r border-luxe-gold/20 dark:border-luxe-gold/10 transition-all duration-300 flex flex-col shadow-lg",
+      "fixed left-0 top-0 z-40 h-screen bg-gradient-to-b from-silver-light via-cream-light to-pure-white dark:from-[#121215] dark:via-[#09090B] dark:to-[#0C0C0E] border-r border-luxe-gold/20 dark:border-luxe-gold/10 transition-all duration-300 flex flex-col shadow-lg print:hidden",
       sidebarCollapsed ? "w-20" : "w-72"
     )}>
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-luxe-gold via-soft-gold to-luxe-gold" />

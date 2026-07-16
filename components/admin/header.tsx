@@ -47,7 +47,7 @@ export function Header({ title, description }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-gradient-to-r from-cream-light via-silver-light to-cream-light dark:from-[#0C0C0E] dark:via-[#121215] dark:to-[#0C0C0E] backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-[#0C0C0E]/60 border-b border-luxe-gold/20 dark:border-luxe-gold/10 shadow-sm">
+    <header className="sticky top-0 z-30 bg-gradient-to-r from-cream-light via-silver-light to-cream-light dark:from-[#0C0C0E] dark:via-[#121215] dark:to-[#0C0C0E] backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-[#0C0C0E]/60 border-b border-luxe-gold/20 dark:border-luxe-gold/10 shadow-sm print:hidden">
       <div className="flex items-center justify-between h-16 px-8">
         {/* Title section */}
         <div className="flex-1">

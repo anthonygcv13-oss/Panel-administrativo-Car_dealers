@@ -230,3 +230,66 @@
   box-shadow: 0 0 10px rgba(201, 169, 97, 0.08);
 }
 
+/* Optimización Premium para Impresión de Certificados */
+@media print {
+  /* Ocultar notificaciones, toasters, barras de estado y elementos no deseados */
+  [data-sonner-toaster],
+  [data-toast],
+  .sonner-toast,
+  [role="status"],
+  div[class*="Toaster"],
+  div[class*="toaster"] {
+    display: none !important;
+  }
+
+  /* Configuración de página con márgenes limpios y eliminación de cabeceras/pies automáticos del navegador */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 10mm 15mm 10mm;
+  }
+
+  /* Forzar fondo blanco y texto oscuro legibles para impresión */
+  html, body {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #0b0f19 !important;
+    font-size: 12pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Asegurar que las imágenes y códigos QR no se corten */
+  img, svg, canvas, .qr-code {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Estilos específicos para forzar colores de fondo de elementos clave del certificado */
+  .bg-zinc-50, .dark .bg-zinc-900, [class*="bg-zinc-50"] {
+    background-color: #f4f4f5 !important;
+  }
+
+  .border-zinc-200, .dark .border-zinc-800 {
+    border-color: #e4e4e7 !important;
+  }
+
+  .text-zinc-500, .text-muted-foreground {
+    color: #52525b !important;
+  }
+
+  [class*="text-[#C9A961]"], .text-luxe-gold {
+    color: #ab8639 !important; /* Tono dorado ligeramente más oscuro para mejor contraste en papel */
+  }
+
+  /* Mantener el diseño del Certificado de Compra elegante en papel */
+  .max-w-xl {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+}
+

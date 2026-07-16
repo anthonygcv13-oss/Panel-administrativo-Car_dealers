@@ -359,15 +359,15 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen print:min-h-0 print:bg-white">
       <Header 
         title="Ventas y Negocios" 
         description="Administra las ventas, cotizaciones y reportes"
       />
       
-      <div className="p-6">
-        <Tabs defaultValue="sales" className="space-y-6">
-          <TabsList className="bg-muted p-1">
+      <div className="p-6 print:p-0">
+        <Tabs defaultValue="sales" className="space-y-6 print:space-y-0">
+          <TabsList className="bg-muted p-1 print:hidden">
             <TabsTrigger value="sales">Ventas Registradas</TabsTrigger>
             <TabsTrigger value="quotes">Cotizaciones</TabsTrigger>
             <TabsTrigger value="reports">Reportes</TabsTrigger>
@@ -578,9 +578,9 @@ export default function SalesPage() {
           <TabsContent value="reports" className="mt-0">
             <ReportsPage hideHeader={true} />
           </TabsContent>
-          <TabsContent value="simulator" className="mt-0 space-y-6">
-            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm">
-              <CardContent className="p-6">
+          <TabsContent value="simulator" className="mt-0 space-y-6 print:space-y-0 print:p-0">
+            <Card className="border-border/50 bg-white/40 dark:bg-[#121215]/40 backdrop-blur-sm print:border-none print:bg-transparent print:shadow-none">
+              <CardContent className="p-6 print:p-0">
                 {/* Wizard Step Progress */}
                 {simStep <= 4 && (
                   <div className="mb-8">

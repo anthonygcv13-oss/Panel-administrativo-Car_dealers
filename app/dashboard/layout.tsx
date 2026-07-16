@@ -64,9 +64,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white dark:from-[#09090B] dark:via-[#0C0C0E] dark:to-[#09090B] text-foreground transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-cream-light via-silver-light to-pure-white dark:from-[#09090B] dark:via-[#0C0C0E] dark:to-[#09090B] text-foreground transition-colors duration-300 print:bg-white">
       <Sidebar />
-      <main className={`${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300`}>
+      <main className={`${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300 print:ml-0 print:p-0`}>
         {children}
       </main>
       <Toaster />
