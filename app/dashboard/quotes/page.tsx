@@ -70,14 +70,18 @@ export default function QuotesPage({ hideHeader = false }: { hideHeader?: boolea
 
   const availableVehicles = vehicles.filter(v => v.status === 'available')
 
+  const normalizeText = (str: string) => 
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+
   const filteredQuotes = quotes.filter(quote => {
     const customer = customers.find(c => c.id_customer === quote.id_customer)
     const vehicle = vehicles.find(v => v.id_vehicle === quote.id_vehicle)
     const brand = brands.find(b => b.id_brand === vehicle?.id_brand)
+    const searchNormalized = normalizeText(searchTerm)
     const matchesSearch = 
-      customer?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer?.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      brand?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (customer ? normalizeText(customer.first_name).includes(searchNormalized) : false) ||
+      (customer ? normalizeText(customer.last_name).includes(searchNormalized) : false) ||
+      (brand ? normalizeText(brand.name).includes(searchNormalized) : false)
     const matchesStatus = statusFilter === 'all' || quote.status === statusFilter
     return matchesSearch && matchesStatus
   })

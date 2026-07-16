@@ -24,13 +24,6 @@ export function NotificationsMenu() {
 
   useEffect(() => {
     fetchNotifications() // Cargar al montar
-
-    // Configurar polling cada 30 segundos
-    const interval = setInterval(() => {
-      fetchNotifications()
-    }, 30000)
-
-    return () => clearInterval(interval)
   }, [fetchNotifications])
 
   const unreadCount = notifications.filter((n) => !n.read).length

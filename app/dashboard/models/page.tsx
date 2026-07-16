@@ -59,11 +59,15 @@ export default function ModelsPage({ hideHeader = false }: { hideHeader?: boolea
     setCurrentPage(1)
   }, [searchTerm, brandFilter])
 
+  const normalizeText = (str: string) => 
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+
   const filteredModels = models.filter(model => {
     const brand = brands.find(b => b.id_brand === model.id_brand)
+    const searchNormalized = normalizeText(searchTerm)
     const matchesSearch = 
-      model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      brand?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      normalizeText(model.name).includes(searchNormalized) ||
+      (brand ? normalizeText(brand.name).includes(searchNormalized) : false)
     const matchesBrand = brandFilter === 'all' || model.id_brand.toString() === brandFilter
     return matchesSearch && matchesBrand
   })

@@ -125,14 +125,18 @@ export default function VehiclesPage() {
     setCurrentPage(1)
   }, [searchTerm, statusFilter, brandFilter])
 
+  const normalizeText = (str: string) => 
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+
   const filteredVehicles = vehicles.filter(vehicle => {
     const brand = brands.find(b => b.id_brand === vehicle.id_brand)
     const model = models.find(m => m.id_model === vehicle.id_model)
+    const searchNormalized = normalizeText(searchTerm)
     const matchesSearch = 
-      vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      brand?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.color.toLowerCase().includes(searchTerm.toLowerCase())
+      normalizeText(vehicle.license_plate).includes(searchNormalized) ||
+      (brand ? normalizeText(brand.name).includes(searchNormalized) : false) ||
+      (model ? normalizeText(model.name).includes(searchNormalized) : false) ||
+      normalizeText(vehicle.color).includes(searchNormalized)
     const matchesStatus = statusFilter === 'all' || vehicle.status === statusFilter
     const matchesBrand = brandFilter === 'all' || vehicle.id_brand.toString() === brandFilter
     return matchesSearch && matchesStatus && matchesBrand

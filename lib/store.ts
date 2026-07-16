@@ -281,9 +281,11 @@ interface AuthState {
   token: string | null
   isAuthenticated: boolean
   sidebarCollapsed: boolean
+  isHydrated: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
+  setHydrated: (val: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -293,6 +295,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       sidebarCollapsed: false,
+      isHydrated: false,
       login: async (email, password) => {
         try {
           const response = await fetch(`${API_URL}/auth/login`, {
@@ -336,10 +339,32 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+      setHydrated: (val) => set({ isHydrated: val }),
     }),
-    { name: 'carliz-auth' }
+    {
+      name: 'carliz-auth',
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
+      }
+    }
   )
 )
+
+export interface VehicleImageInput extends Omit<VehicleImage, 'id_vehicle_image' | 'created_at' | 'updated_at'> {
+  image?: File | null
+}
+
+export interface VehicleImageUpdateInput extends Partial<VehicleImage> {
+  image?: File | null
+}
+
+export interface BrandImageInput extends Omit<BrandImage, 'id_brand_image' | 'created_at' | 'updated_at'> {
+  image?: File | null
+}
+
+export interface BrandImageUpdateInput extends Partial<BrandImage> {
+  image?: File | null
+}
 
 // Data Store
 interface DataState {
@@ -399,12 +424,12 @@ interface DataState {
   updateUser: (id: number, user: Partial<User>) => Promise<void>
   deleteUser: (id: number) => Promise<void>
 
-  addVehicleImage: (image: Omit<VehicleImage, 'id_vehicle_image' | 'created_at' | 'updated_at'>) => Promise<void>
-  updateVehicleImage: (id: number, image: Partial<VehicleImage>) => Promise<void>
+  addVehicleImage: (image: VehicleImageInput) => Promise<void>
+  updateVehicleImage: (id: number, image: VehicleImageUpdateInput) => Promise<void>
   deleteVehicleImage: (id: number) => Promise<void>
 
-  addBrandImage: (image: Omit<BrandImage, 'id_brand_image' | 'created_at' | 'updated_at'>) => Promise<void>
-  updateBrandImage: (id: number, image: Partial<BrandImage>) => Promise<void>
+  addBrandImage: (image: BrandImageInput) => Promise<void>
+  updateBrandImage: (id: number, image: BrandImageUpdateInput) => Promise<void>
   deleteBrandImage: (id: number) => Promise<void>
 
   addVehicleVideo: (video: Omit<VehicleVideo, 'id_vehicle_video' | 'created_at' | 'updated_at'>) => Promise<void>
@@ -414,6 +439,7 @@ interface DataState {
   addFinancingPlan: (plan: Omit<FinancingPlan, 'id_financing_plan' | 'created_at' | 'updated_at'>) => Promise<void>
   updateFinancingPlan: (id: number, plan: Partial<FinancingPlan>) => Promise<void>
   deleteFinancingPlan: (id: number) => Promise<void>
+  addLocalNotification: (notification: Notification) => void
 }
 
 export const useDataStore = create<DataState>()(
@@ -693,14 +719,14 @@ export const useDataStore = create<DataState>()(
       },
       
       // VehicleImage CRUD
-      addVehicleImage: async (image) => {
+      addVehicleImage: async (image: VehicleImageInput) => {
         const formData = new FormData()
         if (image.image instanceof File) {
           formData.append('image', image.image)
         }
         Object.entries(image).forEach(([key, value]) => {
           if (key === 'image' || value === undefined || value === null) return
-          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+          formData.append(key, (value as any) instanceof Date ? (value as any).toISOString() : String(value))
         })
         await apiRequest('/vehicle-images', {
           method: 'POST',
@@ -708,14 +734,14 @@ export const useDataStore = create<DataState>()(
         })
         await get().fetchInitialData()
       },
-      updateVehicleImage: async (id, image) => {
+      updateVehicleImage: async (id, image: VehicleImageUpdateInput) => {
         const formData = new FormData()
         if (image.image instanceof File) {
           formData.append('image', image.image)
         }
         Object.entries(image).forEach(([key, value]) => {
           if (key === 'image' || value === undefined || value === null) return
-          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+          formData.append(key, (value as any) instanceof Date ? (value as any).toISOString() : String(value))
         })
         await apiRequest(`/vehicle-images/${id}`, {
           method: 'PUT',
@@ -731,14 +757,14 @@ export const useDataStore = create<DataState>()(
       },
 
       // BrandImage CRUD
-      addBrandImage: async (image) => {
+      addBrandImage: async (image: BrandImageInput) => {
         const formData = new FormData()
         if (image.image instanceof File) {
           formData.append('image', image.image)
         }
         Object.entries(image).forEach(([key, value]) => {
           if (key === 'image' || value === undefined || value === null) return
-          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+          formData.append(key, (value as any) instanceof Date ? (value as any).toISOString() : String(value))
         })
         await apiRequest('/brand-images', {
           method: 'POST',
@@ -746,14 +772,14 @@ export const useDataStore = create<DataState>()(
         })
         await get().fetchInitialData()
       },
-      updateBrandImage: async (id, image) => {
+      updateBrandImage: async (id, image: BrandImageUpdateInput) => {
         const formData = new FormData()
         if (image.image instanceof File) {
           formData.append('image', image.image)
         }
         Object.entries(image).forEach(([key, value]) => {
           if (key === 'image' || value === undefined || value === null) return
-          formData.append(key, value instanceof Date ? value.toISOString() : String(value))
+          formData.append(key, (value as any) instanceof Date ? (value as any).toISOString() : String(value))
         })
         await apiRequest(`/brand-images/${id}`, {
           method: 'PUT',
@@ -874,6 +900,16 @@ export const useDataStore = create<DataState>()(
         } catch (error) {
           console.error("Error deleting notification:", error)
         }
+      },
+      addLocalNotification: (notification) => {
+        set((state) => {
+          if (state.notifications.some(n => n.id_notification === notification.id_notification)) {
+            return state
+          }
+          return {
+            notifications: [notification, ...state.notifications]
+          }
+        })
       },
     }),
     { name: 'carliz-data' }

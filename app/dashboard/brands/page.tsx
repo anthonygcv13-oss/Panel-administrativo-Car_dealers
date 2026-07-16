@@ -125,10 +125,16 @@ export default function BrandsPage({ hideHeader = false }: { hideHeader?: boolea
     setCurrentPage(1)
   }, [searchTerm])
 
-  const filteredBrands = brands.filter(brand =>
-    brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    brand.country_origin.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const normalizeText = (str: string) => 
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+
+  const filteredBrands = brands.filter(brand => {
+    const searchNormalized = normalizeText(searchTerm)
+    return (
+      normalizeText(brand.name).includes(searchNormalized) ||
+      normalizeText(brand.country_origin).includes(searchNormalized)
+    )
+  })
 
   const totalPages = Math.ceil(filteredBrands.length / itemsPerPage)
   const paginatedBrands = filteredBrands.slice(

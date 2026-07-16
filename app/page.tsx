@@ -12,7 +12,7 @@ import { Eye, EyeOff, AlertCircle, Sun, Moon } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated } = useAuthStore()
+  const { login, isAuthenticated, isHydrated } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -53,10 +53,10 @@ export default function LoginPage() {
   }
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isHydrated && isAuthenticated) {
       router.push('/dashboard')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isHydrated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,6 +71,10 @@ export default function LoginPage() {
       setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.')
     }
     setIsLoading(false)
+  }
+
+  if (!isHydrated || isAuthenticated) {
+    return null
   }
 
   return (
